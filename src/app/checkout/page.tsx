@@ -7,10 +7,19 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Separator } from "@/components/ui/separator";
 import { useEffect } from "react";
 import Image from "next/image";
+import { useAuth } from "@/context/AuthContext";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function CheckoutPage() {
   const { cartItems, cartTotal, clearCart } = useCart();
+  const { user, loading } = useAuth();
   const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/login?redirect=/checkout');
+    }
+  }, [user, loading, router]);
 
   useEffect(() => {
     if (cartItems.length === 0) {
@@ -35,6 +44,28 @@ export default function CheckoutPage() {
 
   const shippingCost = 5.00;
   const grandTotal = cartTotal + shippingCost;
+
+  if (loading || !user) {
+    return (
+       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="max-w-2xl mx-auto">
+            <h1 className="text-4xl font-headline font-bold text-center mb-8">Checkout</h1>
+            <Card>
+                <CardHeader>
+                    <Skeleton className="h-8 w-48" />
+                </CardHeader>
+                <CardContent className="space-y-4">
+                   <Skeleton className="h-24 w-full" />
+                   <Skeleton className="h-8 w-full" />
+                </CardContent>
+                <CardFooter>
+                    <Skeleton className="h-12 w-full" />
+                </CardFooter>
+            </Card>
+        </div>
+      </div>
+    );
+  }
 
   if(cartItems.length === 0) return null;
 

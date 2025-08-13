@@ -30,3 +30,9 @@ export interface Order {
   createdAt: Date;
   status: 'Pending' | 'Shipped' | 'Delivered';
 }
+
+export interface User {
+  uid: string;
+  email: string | null;
+  displayName: string | null;
+}
