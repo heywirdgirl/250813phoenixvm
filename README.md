@@ -1,5 +1,8 @@
 # Printful Boutique - Kiến trúc dự án
 
+# 250814 0925
+
+
 Chào mừng bạn đến với Printful Boutique! Đây là một ứng dụng thương mại điện tử Next.js được xây dựng bằng Firebase, ShadCN UI và Genkit cho các tính năng AI.
 
 ## Cây thư mục
