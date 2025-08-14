@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, Suspense } from "react"; // Thêm Suspense
 import { useRouter, useSearchParams } from "next/navigation";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "@/firebase/clientApp";
@@ -12,9 +12,9 @@ import Link from "next/link";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Terminal } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
-import { useEffect } from "react";
 
-export default function LoginPage() {
+// Component con chứa logic sử dụng useSearchParams
+function LoginPageContent() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -22,12 +22,11 @@ export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect") || "/";
-
   const { user, loading: authLoading } = useAuth();
 
   useEffect(() => {
     if (!authLoading && user) {
-        router.replace(redirect);
+      router.replace(redirect);
     }
   }, [user, authLoading, router, redirect]);
 
@@ -37,9 +36,9 @@ export default function LoginPage() {
     setError(null);
 
     if (!auth) {
-        setError("Firebase is not initialized.");
-        setLoading(false);
-        return;
+      setError("Firebase is not initialized.");
+      setLoading(false);
+      return;
     }
 
     try {
@@ -53,9 +52,9 @@ export default function LoginPage() {
 
   if (authLoading || user) {
     return (
-        <div className="flex justify-center items-center h-screen">
-            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
-        </div>
+      <div className="flex justify-center items-center h-screen">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+      </div>
     );
   }
 
@@ -63,55 +62,64 @@ export default function LoginPage() {
     <div className="container mx-auto flex h-[calc(100vh-8rem)] items-center justify-center px-4">
       <Card className="w-full max-w-sm">
         <form onSubmit={handleLogin}>
-            <CardHeader>
+          <CardHeader>
             <CardTitle className="text-2xl font-headline">Login</CardTitle>
             <CardDescription>
-                Enter your email below to login to your account.
+              Enter your email below to login to your account.
             </CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-4">
+          </CardHeader>
+          <CardContent className="grid gap-4">
             <div className="grid gap-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                    id="email"
-                    type="email"
-                    placeholder="m@example.com"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                />
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="m@example.com"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
             </div>
             <div className="grid gap-2">
-                <Label htmlFor="password">Password</Label>
-                <Input 
-                    id="password" 
-                    type="password" 
-                    required 
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                />
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
             </div>
             {error && (
-                <Alert variant="destructive">
-                    <Terminal className="h-4 w-4" />
-                    <AlertTitle>Login Failed</AlertTitle>
-                    <AlertDescription>{error}</AlertDescription>
-                </Alert>
+              <Alert variant="destructive">
+                <Terminal className="h-4 w-4" />
+                <AlertTitle>Login Failed</AlertTitle>
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
             )}
-            </CardContent>
-            <CardFooter className="flex flex-col gap-4">
-                <Button className="w-full" type="submit" disabled={loading}>
-                    {loading ? "Signing In..." : "Sign In"}
-                </Button>
-                <div className="mt-4 text-center text-sm">
-                    Don't have an account?{' '}
-                    <Link href={`/signup?redirect=${redirect}`} className="underline">
-                        Sign up
-                    </Link>
-                </div>
-            </CardFooter>
+          </CardContent>
+          
+          <CardFooter className="flex flex-col gap-4">
+            <Button className="w-full" type="submit" disabled={loading}>
+              {loading ? "Signing In..." : "Sign In"}
+            </Button>
+            <div className="mt-4 text-center text-sm">
+              Don't have an account?{' '}
+              <Link href={`/signup?redirect=${redirect}`} className="underline">
+                Sign up
+              </Link>
+            </div>
+          </CardFooter>
         </form>
       </Card>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="flex justify-center items-center h-screen">Đang tải...</div>}>
+      <LoginPageContent />
+    </Suspense>
   );
 }
