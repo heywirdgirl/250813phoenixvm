@@ -98,6 +98,7 @@ function LoginPageContent() {
               </Alert>
             )}
           </CardContent>
+          
           <CardFooter className="flex flex-col gap-4">
             <Button className="w-full" type="submit" disabled={loading}>
               {loading ? "Signing In..." : "Sign In"}
