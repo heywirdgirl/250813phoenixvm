@@ -1,8 +1,9 @@
+// src/app/login/page.tsx
 "use client";
 
-import { useState, useEffect, Suspense } from "react"; // Thêm Suspense
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { signInWithEmailAndPassword } from "firebase/auth";
+import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { auth } from "@/firebase/clientApp";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,6 +31,7 @@ function LoginPageContent() {
     }
   }, [user, authLoading, router, redirect]);
 
+  // Xử lý đăng nhập bằng email/mật khẩu
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -45,6 +47,29 @@ function LoginPageContent() {
       await signInWithEmailAndPassword(auth, email, password);
       // Let the useEffect handle the redirect
     } catch (error: any) {
+      console.error("Email login error:", error.code, error.message);
+      setError(error.message);
+      setLoading(false);
+    }
+  };
+
+  // Xử lý đăng nhập bằng Google
+  const handleGoogleSignIn = async () => {
+    setLoading(true);
+    setError(null);
+
+    if (!auth) {
+      setError("Firebase is not initialized.");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const provider = new GoogleAuthProvider();
+      await signInWithPopup(auth, provider);
+      // Let the useEffect handle the redirect
+    } catch (error: any) {
+      console.error("Google sign-in error:", error.code, error.message);
       setError(error.message);
       setLoading(false);
     }
@@ -98,10 +123,18 @@ function LoginPageContent() {
               </Alert>
             )}
           </CardContent>
-          
           <CardFooter className="flex flex-col gap-4">
             <Button className="w-full" type="submit" disabled={loading}>
               {loading ? "Signing In..." : "Sign In"}
+            </Button>
+            <Button
+              className="w-full"
+              variant="outline"
+              type="button"
+              onClick={handleGoogleSignIn}
+              disabled={loading}
+            >
+              {loading ? "Processing..." : "Sign In with Google"}
             </Button>
             <div className="mt-4 text-center text-sm">
               Don't have an account?{' '}
@@ -118,7 +151,13 @@ function LoginPageContent() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="flex justify-center items-center h-screen">Đang tải...</div>}>
+    <Suspense
+      fallback={
+        <div className="flex justify-center items-center h-screen">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+        </div>
+      }
+    >
       <LoginPageContent />
     </Suspense>
   );
