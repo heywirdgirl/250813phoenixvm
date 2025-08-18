@@ -42,6 +42,8 @@ function SignupForm() {
         return "Đăng ký bằng email và mật khẩu chưa được bật.";
       case "auth/weak-password":
         return "Mật khẩu quá yếu. Vui lòng chọn một mật khẩu mạnh hơn.";
+      case "auth/unauthorized-domain":
+        return "Tên miền này không được phép để xác thực. Vui lòng kiểm tra cài đặt Bảng điều khiển Firebase của bạn.";
       default:
         return "Đã xảy ra lỗi không xác định. Vui lòng thử lại.";
     }
@@ -81,6 +83,7 @@ function SignupForm() {
     }
     try {
       const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: 'select_account' });
       await signInWithPopup(auth, provider);
     } catch (error: any) {
       setError(getFirebaseAuthErrorMessage(error.code));

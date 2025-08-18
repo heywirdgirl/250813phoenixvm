@@ -43,6 +43,8 @@ function LoginPageContent() {
         return "Email hoặc mật khẩu không đúng.";
       case "auth/invalid-credential":
         return "Thông tin đăng nhập không hợp lệ.";
+      case "auth/unauthorized-domain":
+        return "Tên miền này không được phép để xác thực. Vui lòng kiểm tra cài đặt Bảng điều khiển Firebase của bạn.";
       default:
         return "Đã xảy ra lỗi không xác định. Vui lòng thử lại.";
     }
@@ -83,6 +85,7 @@ function LoginPageContent() {
 
     try {
       const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: 'select_account' });
       await signInWithPopup(auth, provider);
       // useEffect sẽ xử lý chuyển hướng
     } catch (error: any) {
