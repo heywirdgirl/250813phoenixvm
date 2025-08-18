@@ -32,6 +32,21 @@ function SignupForm() {
     }
   }, [user, authLoading, router, redirect]);
 
+  const getFirebaseAuthErrorMessage = (errorCode: string) => {
+    switch (errorCode) {
+      case "auth/email-already-in-use":
+        return "Địa chỉ email này đã được sử dụng bởi một tài khoản khác.";
+      case "auth/invalid-email":
+        return "Địa chỉ email không hợp lệ.";
+      case "auth/operation-not-allowed":
+        return "Đăng ký bằng email và mật khẩu chưa được bật.";
+      case "auth/weak-password":
+        return "Mật khẩu quá yếu. Vui lòng chọn một mật khẩu mạnh hơn.";
+      default:
+        return "Đã xảy ra lỗi không xác định. Vui lòng thử lại.";
+    }
+  };
+  
   // Xử lý đăng ký bằng email/mật khẩu
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,13 +59,13 @@ function SignupForm() {
     }
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      if (userCredential.user) {
-        await updateProfile(userCredential.user, {
+      if (auth.currentUser) {
+        await updateProfile(auth.currentUser, {
           displayName: name,
         });
       }
     } catch (error: any) {
-      setError(error.message);
+      setError(getFirebaseAuthErrorMessage(error.code));
       setLoading(false);
     }
   };
@@ -66,11 +81,9 @@ function SignupForm() {
     }
     try {
       const provider = new GoogleAuthProvider();
-      const userCredential = await signInWithPopup(auth, provider);
-      // Không cần updateProfile vì Google tự động cung cấp displayName
-      // Redirect sẽ được xử lý bởi useEffect
+      await signInWithPopup(auth, provider);
     } catch (error: any) {
-      setError(error.message);
+      setError(getFirebaseAuthErrorMessage(error.code));
       setLoading(false);
     }
   };

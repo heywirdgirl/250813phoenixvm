@@ -31,6 +31,23 @@ function LoginPageContent() {
     }
   }, [user, authLoading, router, redirect]);
 
+  // Ánh xạ mã lỗi Firebase sang thông báo thân thiện với người dùng
+  const getFirebaseAuthErrorMessage = (errorCode: string) => {
+    switch (errorCode) {
+      case "auth/invalid-email":
+        return "Địa chỉ email không hợp lệ.";
+      case "auth/user-disabled":
+        return "Tài khoản người dùng này đã bị vô hiệu hóa.";
+      case "auth/user-not-found":
+      case "auth/wrong-password":
+        return "Email hoặc mật khẩu không đúng.";
+      case "auth/invalid-credential":
+        return "Thông tin đăng nhập không hợp lệ.";
+      default:
+        return "Đã xảy ra lỗi không xác định. Vui lòng thử lại.";
+    }
+  };
+
   // Xử lý đăng nhập bằng email/mật khẩu
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,17 +55,17 @@ function LoginPageContent() {
     setError(null);
 
     if (!auth) {
-      setError("Firebase is not initialized.");
+      setError("Firebase chưa được khởi tạo.");
       setLoading(false);
       return;
     }
 
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      // Let the useEffect handle the redirect
+      // useEffect sẽ xử lý chuyển hướng
     } catch (error: any) {
-      console.error("Email login error:", error.code, error.message);
-      setError(error.message);
+      console.error("Lỗi đăng nhập bằng email:", error.code, error.message);
+      setError(getFirebaseAuthErrorMessage(error.code));
       setLoading(false);
     }
   };
@@ -59,7 +76,7 @@ function LoginPageContent() {
     setError(null);
 
     if (!auth) {
-      setError("Firebase is not initialized.");
+      setError("Firebase chưa được khởi tạo.");
       setLoading(false);
       return;
     }
@@ -67,10 +84,10 @@ function LoginPageContent() {
     try {
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
-      // Let the useEffect handle the redirect
+      // useEffect sẽ xử lý chuyển hướng
     } catch (error: any) {
-      console.error("Google sign-in error:", error.code, error.message);
-      setError(error.message);
+      console.error("Lỗi đăng nhập bằng Google:", error.code, error.message);
+      setError(getFirebaseAuthErrorMessage(error.code));
       setLoading(false);
     }
   };
@@ -88,9 +105,9 @@ function LoginPageContent() {
       <Card className="w-full max-w-sm">
         <form onSubmit={handleLogin}>
           <CardHeader>
-            <CardTitle className="text-2xl font-headline">Login</CardTitle>
+            <CardTitle className="text-2xl font-headline">Đăng nhập</CardTitle>
             <CardDescription>
-              Enter your email below to login to your account.
+              Nhập email của bạn dưới đây để đăng nhập vào tài khoản của bạn.
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4">
@@ -106,7 +123,7 @@ function LoginPageContent() {
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">Mật khẩu</Label>
               <Input
                 id="password"
                 type="password"
@@ -118,14 +135,14 @@ function LoginPageContent() {
             {error && (
               <Alert variant="destructive">
                 <Terminal className="h-4 w-4" />
-                <AlertTitle>Login Failed</AlertTitle>
+                <AlertTitle>Đăng nhập thất bại</AlertTitle>
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
           </CardContent>
           <CardFooter className="flex flex-col gap-4">
             <Button className="w-full" type="submit" disabled={loading}>
-              {loading ? "Signing In..." : "Sign In"}
+              {loading ? "Đang đăng nhập..." : "Đăng nhập"}
             </Button>
             <Button
               className="w-full"
@@ -134,12 +151,12 @@ function LoginPageContent() {
               onClick={handleGoogleSignIn}
               disabled={loading}
             >
-              {loading ? "Processing..." : "Sign In with Google"}
+              {loading ? "Đang xử lý..." : "Đăng nhập với Google"}
             </Button>
             <div className="mt-4 text-center text-sm">
-              Don't have an account?{' '}
+              Bạn chưa có tài khoản?{' '}
               <Link href={`/signup?redirect=${redirect}`} className="underline">
-                Sign up
+                Đăng ký
               </Link>
             </div>
           </CardFooter>
