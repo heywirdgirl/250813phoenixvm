@@ -3,7 +3,7 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { createUserWithEmailAndPassword, updateProfile, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import { createUserWithEmailAndPassword, updateProfile, GoogleAuthProvider, signInWithPopup, UserCredential } from "firebase/auth";
 import { auth } from "@/firebase/clientApp";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -61,13 +61,16 @@ function SignupForm() {
     }
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      if (auth.currentUser) {
-        await updateProfile(auth.currentUser, {
-          displayName: name,
+      // `onAuthStateChanged` trong AuthContext sẽ xử lý việc cập nhật trạng thái người dùng
+      // và chuyển hướng. Chỉ cần cập nhật hồ sơ ở đây.
+      if (userCredential.user) {
+         await updateProfile(userCredential.user, {
+            displayName: name,
         });
       }
     } catch (error: any) {
       setError(getFirebaseAuthErrorMessage(error.code));
+    } finally {
       setLoading(false);
     }
   };
@@ -85,9 +88,11 @@ function SignupForm() {
       const provider = new GoogleAuthProvider();
       provider.setCustomParameters({ prompt: 'select_account' });
       await signInWithPopup(auth, provider);
+       // `onAuthStateChanged` sẽ xử lý chuyển hướng
     } catch (error: any) {
       setError(getFirebaseAuthErrorMessage(error.code));
-      setLoading(false);
+    } finally {
+        setLoading(false);
     }
   };
 
