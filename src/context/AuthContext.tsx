@@ -20,6 +20,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
+    // auth might be undefined on the server, so we check
     if (!auth) {
       setLoading(false);
       return;
@@ -38,6 +39,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const logout = async () => {
+    // auth might be undefined on the server, so we check
     if(auth) {
       await signOut(auth);
     }

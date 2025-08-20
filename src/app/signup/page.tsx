@@ -44,6 +44,8 @@ function SignupForm() {
         return "Mật khẩu quá yếu. Vui lòng chọn một mật khẩu mạnh hơn.";
       case "auth/unauthorized-domain":
         return "Tên miền này không được phép để xác thực. Vui lòng kiểm tra cài đặt Bảng điều khiển Firebase của bạn.";
+      case "auth/invalid-api-key":
+        return "Khóa API không hợp lệ. Vui lòng kiểm tra tệp .env của bạn."
       default:
         return "Đã xảy ra lỗi không xác định. Vui lòng thử lại.";
     }
@@ -55,7 +57,7 @@ function SignupForm() {
     setLoading(true);
     setError(null);
     if (!auth) {
-      setError("Firebase is not initialized.");
+      setError("Dịch vụ xác thực không khả dụng. Vui lòng thử lại sau.");
       setLoading(false);
       return;
     }
@@ -80,7 +82,7 @@ function SignupForm() {
     setLoading(true);
     setError(null);
     if (!auth) {
-      setError("Firebase is not initialized.");
+      setError("Dịch vụ xác thực không khả dụng. Vui lòng thử lại sau.");
       setLoading(false);
       return;
     }

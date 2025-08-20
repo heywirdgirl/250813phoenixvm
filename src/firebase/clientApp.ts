@@ -11,16 +11,33 @@ const firebaseConfig = {
     appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-// Hàm để khởi tạo ứng dụng phía máy khách
-function getClientApp(): FirebaseApp {
-    if (getApps().length) {
-        return getApp();
+let app: FirebaseApp;
+let auth: Auth;
+
+// Initialize Firebase on the client side
+if (typeof window !== 'undefined') {
+    if (getApps().length === 0) {
+        app = initializeApp(firebaseConfig);
+    } else {
+        app = getApp();
     }
-    return initializeApp(firebaseConfig);
+    auth = getAuth(app);
 }
 
-// Chỉ khởi tạo trên máy khách
-const app: FirebaseApp | undefined = typeof window !== 'undefined' ? getClientApp() : undefined;
-const auth: Auth | undefined = app ? getAuth(app) : undefined;
+// Export a function to get the auth instance, ensuring it's available
+const getClientAuth = () => {
+    if (!auth) {
+        // This will run if the app is accessed in a way that auth wasn't initialized yet
+        // (e.g., server-side, though we try to avoid that)
+        if (getApps().length === 0) {
+            app = initializeApp(firebaseConfig);
+        } else {
+            app = getApp();
+        }
+        auth = getAuth(app);
+    }
+    return auth;
+};
 
-export { app, auth };
+
+export { app, auth, getClientAuth };

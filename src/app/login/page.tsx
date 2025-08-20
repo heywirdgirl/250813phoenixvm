@@ -40,11 +40,12 @@ function LoginPageContent() {
         return "Tài khoản người dùng này đã bị vô hiệu hóa.";
       case "auth/user-not-found":
       case "auth/wrong-password":
-        return "Email hoặc mật khẩu không đúng.";
       case "auth/invalid-credential":
-        return "Thông tin đăng nhập không hợp lệ.";
+        return "Email hoặc mật khẩu không đúng.";
       case "auth/unauthorized-domain":
         return "Tên miền này không được phép để xác thực. Vui lòng kiểm tra cài đặt Bảng điều khiển Firebase của bạn.";
+      case "auth/invalid-api-key":
+        return "Khóa API không hợp lệ. Vui lòng kiểm tra tệp .env của bạn."
       default:
         return "Đã xảy ra lỗi không xác định. Vui lòng thử lại.";
     }
@@ -57,7 +58,7 @@ function LoginPageContent() {
     setError(null);
 
     if (!auth) {
-      setError("Firebase chưa được khởi tạo.");
+      setError("Dịch vụ xác thực không khả dụng. Vui lòng thử lại sau.");
       setLoading(false);
       return;
     }
@@ -78,7 +79,7 @@ function LoginPageContent() {
     setError(null);
 
     if (!auth) {
-      setError("Firebase chưa được khởi tạo.");
+      setError("Dịch vụ xác thực không khả dụng. Vui lòng thử lại sau.");
       setLoading(false);
       return;
     }
