@@ -1,6 +1,9 @@
 "use server";
 
 import { suggestProductTags, type SuggestProductTagsOutput } from '@/ai/flows/suggest-product-tags';
+import { createPrintfulOrder } from '@/lib/printful';
+import { createPayPalOrder, capturePayPalOrder } from '@/lib/paypal';
+import type { CartItem, User } from '@/lib/types';
 
 export interface SuggestTagsState {
   tags?: string[];
@@ -25,4 +28,38 @@ export async function handleSuggestTags(
     console.error(e);
     return { error: 'Failed to suggest tags. Please try again later.', description: productDescription };
   }
+}
+
+// PayPal Actions
+export async function createOrderAction(cartItems: CartItem[]) {
+    try {
+        return await createPayPalOrder(cartItems);
+    } catch (error) {
+        console.error("Failed to create PayPal order:", error);
+        return { error: "Could not create PayPal order. Please try again." };
+    }
+}
+
+export async function captureOrderAction(orderID: string, cartItems: CartItem[], user: User) {
+    try {
+        const captureData = await capturePayPalOrder(orderID);
+        
+        // Check if payment was successful
+        if (captureData && captureData.status === 'COMPLETED') {
+            // Create order in Printful
+            const printfulResponse = await createPrintfulOrder(cartItems, captureData, user);
+            
+            // Return relevant data to the client
+            return {
+                success: true,
+                orderId: printfulResponse.id,
+                trackingNumber: printfulResponse.id, // Using printful id as tracking for now
+            };
+        } else {
+            throw new Error('PayPal payment not completed.');
+        }
+    } catch (error) {
+        console.error("Failed to capture order:", error);
+        return { error: "Payment could not be processed. Please try again." };
+    }
 }
