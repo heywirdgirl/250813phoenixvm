@@ -1,7 +1,25 @@
 import ProductCard from "@/components/ProductCard";
-import { products } from "@/lib/products";
+import { getStoreProducts } from "@/lib/printful";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Terminal } from "lucide-react";
 
-export default function ProductsPage() {
+export default async function ProductsPage() {
+  const products = await getStoreProducts();
+
+  if (!products || products.length === 0) {
+    return (
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <Alert variant="destructive">
+          <Terminal className="h-4 w-4" />
+          <AlertTitle>Could Not Load Products</AlertTitle>
+          <AlertDescription>
+            We couldn't fetch products from our supplier. This might be due to a configuration issue (e.g., missing API key) or a temporary problem. Please check back later.
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-background">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">

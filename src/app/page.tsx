@@ -1,11 +1,12 @@
-import { products } from "@/lib/products";
 import ProductCard from "@/components/ProductCard";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import Image from "next/image";
+import { getStoreProducts } from "@/lib/printful";
 
-export default function Home() {
-  const featuredProducts = products.slice(0, 3);
+export default async function Home() {
+  const allProducts = await getStoreProducts();
+  const featuredProducts = allProducts.slice(0, 3);
 
   return (
     <>

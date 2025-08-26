@@ -1,8 +1,9 @@
-import { products } from "@/lib/products";
+import { getStoreProducts } from "@/lib/printful";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import ProductDetailsClient from "@/components/ProductDetailsClient";
+import type { Product } from "@/lib/types";
 
 interface ProductPageProps {
   params: {
@@ -10,8 +11,33 @@ interface ProductPageProps {
   };
 }
 
-export default function ProductPage({ params }: ProductPageProps) {
-  const product = products.find((p) => p.id === params.id);
+async function getProduct(id: string): Promise<Product | undefined> {
+  const products = await getStoreProducts();
+  const product = products.find((p) => p.id === id);
+
+  if (!product) {
+    return undefined;
+  }
+  
+  // In a real app, you would fetch detailed product info here, including variants and price.
+  // For now, we'll use the basic info and add some mock variants/price.
+  return {
+      ...product,
+      description: `High-quality and durable, the ${product.name} is a must-have for your collection. Printed on demand with the finest materials.`,
+      price: 29.99, // Placeholder price
+      variants: [ // Placeholder variants
+        { id: 'v1', type: 'Color', name: 'Black' },
+        { id: 'v2', type: 'Color', name: 'White' },
+        { id: 'v4', type: 'Size', name: 'S' },
+        { id: 'v5', type: 'Size', name: 'M' },
+        { id: 'v6', type: 'Size', name: 'L' },
+      ]
+  }
+}
+
+
+export default async function ProductPage({ params }: ProductPageProps) {
+  const product = await getProduct(params.id);
 
   if (!product) {
     notFound();
@@ -23,7 +49,7 @@ export default function ProductPage({ params }: ProductPageProps) {
         <div>
            <Carousel className="w-full">
             <CarouselContent>
-              {product.images.map((image, index) => (
+              {(product.images.length > 0 ? product.images : ['https://picsum.photos/600/600']).map((image, index) => (
                 <CarouselItem key={index}>
                   <div className="aspect-square relative bg-card rounded-lg overflow-hidden border">
                     <Image
