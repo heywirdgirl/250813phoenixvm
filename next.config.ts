@@ -22,6 +22,12 @@ const nextConfig: NextConfig = {
         hostname: 'picsum.photos',
         port: '',
         pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'files.cdn.printful.com',
+        port: '',
+        pathname: '/**',
       }
     ],
   },
