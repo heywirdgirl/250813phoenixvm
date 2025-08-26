@@ -7,7 +7,7 @@ export const products: Product[] = [
     description:
       'A timeless classic. This unisex t-shirt is perfect for any occasion. Made from 100% premium cotton, it offers both comfort and style. The fabric is pre-shrunk to maintain its shape after washing, and the double-needle stitching on the neckline and sleeves add more durability to what is sure to be a favorite!',
     price: 24.99,
-    images: ['https://placehold.co/600x600.png', 'https://placehold.co/600x600.png', 'https://placehold.co/600x600.png'],
+    images: ['https://picsum.photos/seed/tshirt-black/600/600', 'https://picsum.photos/seed/tshirt-model/600/600', 'https://picsum.photos/seed/tshirt-detail/600/600'],
     variants: [
       { id: 'v1', type: 'Color', name: 'Black' },
       { id: 'v2', type: 'Color', name: 'White' },
@@ -24,7 +24,7 @@ export const products: Product[] = [
     description:
       'Stay cozy and stylish with our premium hoodie. It features a high-quality embroidered logo, a soft fleece interior, and a comfortable fit. Perfect for chilly evenings and casual outings.',
     price: 59.99,
-    images: ['https://placehold.co/600x600.png', 'https://placehold.co/600x600.png', 'https://placehold.co/600x600.png'],
+    images: ['https://picsum.photos/seed/hoodie-navy/600/600', 'https://picsum.photos/seed/hoodie-model/600/600', 'https://picsum.photos/seed/hoodie-detail/600/600'],
     variants: [
       { id: 'v8', type: 'Color', name: 'Navy Blue' },
       { id: 'v9', type: 'Color', name: 'Maroon' },
@@ -41,7 +41,7 @@ export const products: Product[] = [
     description:
       'This medium size backpack is just what you need for daily use or sports activities! The pockets (including one for your laptop) give plenty of room for all your necessities, while the water-resistant material will protect them from the weather.',
     price: 45.0,
-    images: ['https://placehold.co/600x600.png', 'https://placehold.co/600x600.png', 'https://placehold.co/600x600.png'],
+    images: ['https://picsum.photos/seed/backpack-galaxy/600/600', 'https://picsum.photos/seed/backpack-model/600/600', 'https://picsum.photos/seed/backpack-detail/600/600'],
     variants: [
       { id: 'v15', type: 'Color', name: 'Galaxy' },
       { id: 'v16', type: 'Color', name: 'Geometric' },
@@ -54,7 +54,7 @@ export const products: Product[] = [
     description:
       'Protect your phone in style with our durable and sleek phone case. Available for various models, this case offers a perfect fit and easy access to all buttons and ports. The tough polycarbonate material protects your phone from scratches, drops, and dust.',
     price: 19.99,
-    images: ['https://placehold.co/600x600.png', 'https://placehold.co/600x600.png', 'https://placehold.co/600x600.png'],
+    images: ['https://picsum.photos/seed/phonecase-matte/600/600', 'https://picsum.photos/seed/phonecase-model/600/600', 'https://picsum.photos/seed/phonecase-detail/600/600'],
     variants: [
       { id: 'v18', type: 'Color', name: 'Matte Black' },
       { id: 'v19', type: 'Color', name: 'Clear' },
@@ -69,7 +69,7 @@ export const products: Product[] = [
     description:
       'Make a statement in any room with this framed poster, printed on thick, durable, matte paper. The matte black frame that\'s made from wood from renewable forests adds an extra touch of class.',
     price: 32.5,
-    images: ['https://placehold.co/600x600.png', 'https://placehold.co/600x600.png', 'https://placehold.co/600x600.png'],
+    images: ['https://picsum.photos/seed/poster-art/600/600', 'https://picsum.photos/seed/poster-room/600/600', 'https://picsum.photos/seed/poster-detail/600/600'],
     variants: [
       { id: 'v23', type: 'Color', name: 'Black Frame' },
       { id: 'v24', type: 'Color', name: 'White Frame' },
@@ -84,7 +84,7 @@ export const products: Product[] = [
     description:
       'This beanie is a snug, form-fitting, and comfortable accessory. Not only will it keep you warm, but it will also add a stylish touch to any outfit. The 100% Turbo Acrylic fabric is hypoallergenic and built to last.',
     price: 21.99,
-    images: ['https://placehold.co/600x600.png', 'https://placehold.co/600x600.png', 'https://placehold.co/600x600.png'],
+    images: ['https://picsum.photos/seed/beanie-green/600/600', 'https://picsum.photos/seed/beanie-model/600/600', 'https://picsum.photos/seed/beanie-detail/600/600'],
     variants: [
       { id: 'v28', type: 'Color', name: 'Forest Green' },
       { id: 'v29', type: 'Color', name: 'Mustard' },

@@ -57,7 +57,7 @@ export async function createPrintfulOrder(cartItems: CartItem[], paypalOrder: an
         files: [
             // Placeholder for the design file. You would typically have a specific design
             // for each product.
-            { url: 'https://placehold.co/1500x1800.png' } 
+            { url: 'https://picsum.photos/seed/design/1500/1800' } 
         ]
     }));
 

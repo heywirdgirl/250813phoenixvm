@@ -12,9 +12,10 @@ export default function Home() {
       <section className="relative bg-card text-center py-20 md:py-32">
         <div className="absolute inset-0">
             <Image 
-                src="https://placehold.co/1600x800.png" 
+                src="https://picsum.photos/seed/hero/1600/800" 
                 alt="Hero background" 
-                fill 
+                fill
+                priority 
                 className="object-cover opacity-10"
                 data-ai-hint="fashion boutique"
             />
