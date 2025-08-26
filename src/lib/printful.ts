@@ -1,3 +1,4 @@
+
 import type { CartItem, User, Product as AppProduct, Variant } from './types';
 import fetch from 'node-fetch';
 
@@ -49,8 +50,8 @@ async function getProductDetails(productId: string, apiKey: string): Promise<any
 export async function getStoreProducts(): Promise<AppProduct[]> {
     const { PRINTFUL_API_KEY } = process.env;
     if (!PRINTFUL_API_KEY) {
-        console.error('Printful API key is not configured.');
-        throw new Error('The Printful API key is missing. Please check your environment variables.');
+        console.warn('The Printful API key is missing. Please check your environment variables. Returning empty product list.');
+        return [];
     }
 
     try {
@@ -109,7 +110,7 @@ export async function getStoreProducts(): Promise<AppProduct[]> {
 
     } catch (error) {
         console.error('Exception in getStoreProducts:', error);
-        // Re-throw the error so the caller (e.g., the page component) can handle it.
+        // In case of an exception (e.g., network error), throw it so the page can handle it.
         throw error;
     }
 }

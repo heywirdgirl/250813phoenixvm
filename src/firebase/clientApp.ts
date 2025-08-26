@@ -11,33 +11,8 @@ const firebaseConfig = {
     appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-let app: FirebaseApp;
-let auth: Auth;
+// Initialize Firebase for SSR and Client
+const app: FirebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
+const auth: Auth = getAuth(app);
 
-// Initialize Firebase on the client side
-if (typeof window !== 'undefined') {
-    if (getApps().length === 0) {
-        app = initializeApp(firebaseConfig);
-    } else {
-        app = getApp();
-    }
-    auth = getAuth(app);
-}
-
-// Export a function to get the auth instance, ensuring it's available
-const getClientAuth = () => {
-    if (!auth) {
-        // This will run if the app is accessed in a way that auth wasn't initialized yet
-        // (e.g., server-side, though we try to avoid that)
-        if (getApps().length === 0) {
-            app = initializeApp(firebaseConfig);
-        } else {
-            app = getApp();
-        }
-        auth = getAuth(app);
-    }
-    return auth;
-};
-
-
-export { app, auth, getClientAuth };
+export { app, auth };

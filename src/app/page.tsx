@@ -1,11 +1,23 @@
+
 import ProductCard from "@/components/ProductCard";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import Image from "next/image";
 import { getStoreProducts } from "@/lib/printful";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Terminal } from "lucide-react";
 
 export default async function Home() {
-  const allProducts = await getStoreProducts();
+  let allProducts = [];
+  let error: string | null = null;
+  
+  try {
+    allProducts = await getStoreProducts();
+  } catch (e: any) {
+    error = e.message || "An unknown error occurred while fetching products.";
+    console.error("Home page failed to fetch products:", e);
+  }
+
   const featuredProducts = allProducts.slice(0, 3);
 
   return (
@@ -40,11 +52,25 @@ export default async function Home() {
           <h2 className="text-3xl md:text-4xl font-headline font-bold text-center mb-12">
             Featured Products
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-            {featuredProducts.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
+          {error ? (
+             <Alert variant="destructive">
+               <Terminal className="h-4 w-4" />
+               <AlertTitle>Could Not Load Products</AlertTitle>
+               <AlertDescription>
+                 There was an issue fetching products from our supplier. Please try again later.
+               </AlertDescription>
+             </Alert>
+          ) : featuredProducts.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+              {featuredProducts.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center text-muted-foreground">
+              <p>No featured products available at the moment. Please check back later!</p>
+            </div>
+          )}
         </div>
       </section>
     </>
