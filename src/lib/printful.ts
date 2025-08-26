@@ -53,70 +53,63 @@ export async function getStoreProducts(): Promise<AppProduct[]> {
         throw new Error('The Printful API key is missing. Please check your environment variables.');
     }
 
-    try {
-        const listResponse = await fetch(`${PRINTFUL_API_URL}/store/products`, {
-            method: 'GET',
-            headers: { 'Authorization': `Bearer ${PRINTFUL_API_KEY}` },
-        });
-        
-        const listData: any = await listResponse.json();
+    const listResponse = await fetch(`${PRINTFUL_API_URL}/store/products`, {
+        method: 'GET',
+        headers: { 'Authorization': `Bearer ${PRINTFUL_API_KEY}` },
+    });
+    
+    const listData: any = await listResponse.json();
 
-        if (!listResponse.ok) {
-            const errorDetails = listData.result ? JSON.stringify(listData.result) : listResponse.statusText;
-            console.error('Printful API Error fetching products list:', errorDetails);
-            throw new Error(`Printful API error: ${listData.error?.message || errorDetails}`);
-        }
-        
-        if (!listData.result || listData.result.length === 0) {
-            console.warn("Printful API returned no synced products.");
-            return [];
-        }
-
-        // Fetch details for each product in parallel
-        const productDetailsPromises = listData.result.map((p: any) => getProductDetails(String(p.id), PRINTFUL_API_KEY));
-        const detailedProducts = await Promise.all(productDetailsPromises);
-        
-        // Transform Printful products to our app's Product type
-        return detailedProducts.map((detailedProduct: any) => {
-            const syncProduct = detailedProduct.sync_product;
-            const syncVariants = detailedProduct.sync_variants;
-            
-            // Use the first variant's price as the default display price
-            const defaultPrice = syncVariants.length > 0 ? parseFloat(syncVariants[0].retail_price) : 0;
-
-            const variants: Variant[] = [];
-            const colors = new Set<string>();
-            const sizes = new Set<string>();
-
-            syncVariants.forEach((variant: any) => {
-                if (variant.color) colors.add(variant.color);
-                if (variant.size) sizes.add(variant.size);
-            });
-
-            Array.from(colors).forEach((color, index) => variants.push({id: `c-${syncProduct.id}-${index}`, type: 'Color', name: color}));
-            Array.from(sizes).forEach((size, index) => variants.push({id: `s-${syncProduct.id}-${index}`, type: 'Size', name: size}));
-
-
-            return {
-                id: String(syncProduct.id),
-                name: syncProduct.name,
-                description: syncVariants.length > 0 ? syncVariants[0].product.description || 'A high-quality product from our collection.' : 'A high-quality product from our collection.',
-                price: defaultPrice,
-                images: syncVariants.map((v: any) => v.files.find((f: any) => f.type === 'preview')?.preview_url).filter(Boolean) || [syncProduct.thumbnail_url],
-                variants: variants,
-            };
-        });
-
-    } catch (error) {
-        console.error('Exception in getStoreProducts:', error);
-        // In case of an exception (e.g., network error), throw it so the page can handle it.
-        throw error;
+    if (!listResponse.ok) {
+        const errorDetails = listData.result ? JSON.stringify(listData.result) : listResponse.statusText;
+        console.error('Printful API Error fetching products list:', errorDetails);
+        throw new Error(`Printful API error: ${listData.error?.message || errorDetails}`);
     }
+    
+    if (!listData.result || listData.result.length === 0) {
+        console.warn("Printful API returned no synced products.");
+        return [];
+    }
+
+    // Fetch details for each product in parallel
+    const productDetailsPromises = listData.result.map((p: any) => getProductDetails(String(p.id), PRINTFUL_API_KEY));
+    const detailedProducts = await Promise.all(productDetailsPromises);
+    
+    // Transform Printful products to our app's Product type
+    return detailedProducts.map((detailedProduct: any) => {
+        const syncProduct = detailedProduct.sync_product;
+        const syncVariants = detailedProduct.sync_variants;
+        
+        // Use the first variant's price as the default display price
+        const defaultPrice = syncVariants.length > 0 ? parseFloat(syncVariants[0].retail_price) : 0;
+
+        const variants: Variant[] = [];
+        const colors = new Set<string>();
+        const sizes = new Set<string>();
+
+        syncVariants.forEach((variant: any) => {
+            if (variant.color) colors.add(variant.color);
+            if (variant.size) sizes.add(variant.size);
+        });
+
+        Array.from(colors).forEach((color, index) => variants.push({id: `c-${syncProduct.id}-${index}`, type: 'Color', name: color}));
+        Array.from(sizes).forEach((size, index) => variants.push({id: `s-${syncProduct.id}-${index}`, type: 'Size', name: size}));
+
+
+        return {
+            id: String(syncProduct.id),
+            name: syncProduct.name,
+            description: syncVariants.length > 0 ? syncVariants[0].product.description || 'A high-quality product from our collection.' : 'A high-quality product from our collection.',
+            price: defaultPrice,
+            images: syncVariants.map((v: any) => v.files.find((f: any) => f.type === 'preview')?.preview_url).filter(Boolean) || [syncProduct.thumbnail_url],
+            variants: variants,
+        };
+    });
 }
 
 
 export async function createPrintfulOrder(cartItems: CartItem[], paypalOrder: any, user: User) {
-    const { PRINTFUL_API_KEY } = process.env;
+    const { PRINTFUL_API_KEY } = processenv;
     if (!PRINTFUL_API_KEY) {
         throw new Error('Printful API key is not configured.');
     }
