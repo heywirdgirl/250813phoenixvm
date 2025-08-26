@@ -27,7 +27,7 @@ const getFirebaseAuthErrorMessage = (errorCode: string) => {
     case "auth/invalid-credential":
       return "Email hoặc mật khẩu không đúng.";
     case "auth/unauthorized-domain":
-      return "Tên miền này không được phép để xác thực. Vui lòng kiểm tra cài đặt Bảng điều khiển Firebase của bạn và đảm bảo 'localhost' đã được thêm vào.";
+      return "Tên miền này không được phép để xác thực. Vui lòng kiểm tra lại cài đặt trong Bảng điều khiển Firebase của bạn và đảm bảo 'localhost' đã được thêm vào.";
     case "auth/invalid-api-key":
       return "Khóa API không hợp lệ. Vui lòng kiểm tra lại các giá trị trong tệp .env của bạn.";
     default:
@@ -149,6 +149,8 @@ function LoginPageContent() {
             <Button className="w-full" type="submit" disabled={loading}>
               {loading ? "Đang đăng nhập..." : "Đăng nhập"}
             </Button>
+            {/* Tạm thời ẩn nút đăng nhập bằng Google để gỡ lỗi */}
+            {/* 
             <Button
               className="w-full"
               variant="outline"
@@ -158,6 +160,7 @@ function LoginPageContent() {
             >
               {loading ? "Đang xử lý..." : "Đăng nhập với Google"}
             </Button>
+            */}
             <div className="mt-4 text-center text-sm">
               Bạn chưa có tài khoản?{' '}
               <Link href={`/signup?redirect=${redirect}`} className="underline">

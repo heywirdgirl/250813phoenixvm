@@ -26,7 +26,7 @@ const getFirebaseAuthErrorMessage = (errorCode: string) => {
       case "auth/weak-password":
         return "Mật khẩu quá yếu. Vui lòng chọn một mật khẩu mạnh hơn.";
       case "auth/unauthorized-domain":
-        return "Tên miền này không được phép để xác thực. Vui lòng kiểm tra cài đặt Bảng điều khiển Firebase của bạn và đảm bảo 'localhost' đã được thêm vào.";
+        return "Tên miền này không được phép để xác thực. Vui lòng kiểm tra lại cài đặt trong Bảng điều khiển Firebase của bạn.";
       case "auth/invalid-api-key":
         return "Khóa API không hợp lệ. Vui lòng kiểm tra lại các giá trị trong tệp .env của bạn.";
       default:
@@ -166,6 +166,8 @@ function SignupForm() {
             <Button className="w-full" type="submit" disabled={loading}>
               {loading ? "Creating Account..." : "Create Account"}
             </Button>
+             {/* Tạm thời ẩn nút đăng ký bằng Google để gỡ lỗi */}
+            {/* 
             <Button
               className="w-full"
               variant="outline"
@@ -175,6 +177,7 @@ function SignupForm() {
             >
               {loading ? "Processing..." : "Sign Up with Google"}
             </Button>
+            */}
             <div className="mt-4 text-center text-sm">
               Already have an account?{' '}
               <Link href={`/login?redirect=${redirect}`} className="underline">
