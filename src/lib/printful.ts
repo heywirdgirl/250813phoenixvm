@@ -50,8 +50,7 @@ async function getProductDetails(productId: string, apiKey: string): Promise<any
 export async function getStoreProducts(): Promise<AppProduct[]> {
     const { PRINTFUL_API_KEY } = process.env;
     if (!PRINTFUL_API_KEY) {
-        console.warn('The Printful API key is missing. Please check your environment variables. Returning empty product list.');
-        return [];
+        throw new Error('The Printful API key is missing. Please check your environment variables.');
     }
 
     try {
