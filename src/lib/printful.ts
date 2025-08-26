@@ -1,4 +1,4 @@
-import type { CartItem, User, Product as AppProduct } from './types';
+import type { CartItem, User, Product as AppProduct, Variant } from './types';
 import fetch from 'node-fetch';
 
 const PRINTFUL_API_URL = 'https://api.printful.com';
@@ -28,6 +28,24 @@ function getPrintfulVariantId(productName: string, size: string, color: string):
     return 1;
 }
 
+// Fetches full details for a single product.
+async function getProductDetails(productId: string, apiKey: string): Promise<any> {
+    const response = await fetch(`${PRINTFUL_API_URL}/store/products/${productId}`, {
+        method: 'GET',
+        headers: {
+            'Authorization': `Bearer ${apiKey}`,
+        },
+    });
+    const data: any = await response.json();
+    if (!response.ok) {
+        const errorDetails = data.result ? JSON.stringify(data.result) : response.statusText;
+        console.error(`Printful API Error fetching product details for ID ${productId}:`, errorDetails);
+        throw new Error(`Printful API error for product ${productId}: ${data.error?.message || errorDetails}`);
+    }
+    return data.result;
+}
+
+
 export async function getStoreProducts(): Promise<AppProduct[]> {
     const { PRINTFUL_API_KEY } = process.env;
     if (!PRINTFUL_API_KEY) {
@@ -36,35 +54,58 @@ export async function getStoreProducts(): Promise<AppProduct[]> {
     }
 
     try {
-        const response = await fetch(`${PRINTFUL_API_URL}/store/products`, {
+        const listResponse = await fetch(`${PRINTFUL_API_URL}/store/products`, {
             method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${PRINTFUL_API_KEY}`,
-            },
+            headers: { 'Authorization': `Bearer ${PRINTFUL_API_KEY}` },
         });
         
-        const data: any = await response.json();
+        const listData: any = await listResponse.json();
 
-        if (!response.ok) {
-            const errorDetails = data.result ? JSON.stringify(data.result) : response.statusText;
-            console.error('Printful API Error fetching products:', errorDetails);
-            throw new Error(`Printful API error: ${data.error?.message || errorDetails}`);
+        if (!listResponse.ok) {
+            const errorDetails = listData.result ? JSON.stringify(listData.result) : listResponse.statusText;
+            console.error('Printful API Error fetching products list:', errorDetails);
+            throw new Error(`Printful API error: ${listData.error?.message || errorDetails}`);
         }
         
-        if (!data.result || data.result.length === 0) {
+        if (!listData.result || listData.result.length === 0) {
             console.warn("Printful API returned no synced products.");
             return [];
         }
 
+        // Fetch details for each product in parallel
+        const productDetailsPromises = listData.result.map((p: any) => getProductDetails(String(p.id), PRINTFUL_API_KEY));
+        const detailedProducts = await Promise.all(productDetailsPromises);
+        
         // Transform Printful products to our app's Product type
-        return data.result.map((product: any) => ({
-            id: String(product.id),
-            name: product.name,
-            description: 'A high-quality product from our collection.', // Placeholder description
-            price: 0, // Placeholder price, will be fetched later
-            images: [product.thumbnail_url],
-            variants: [], // Placeholder variants, will be fetched later
-        }));
+        return detailedProducts.map((detailedProduct: any) => {
+            const syncProduct = detailedProduct.sync_product;
+            const syncVariants = detailedProduct.sync_variants;
+            
+            // Use the first variant's price as the default display price
+            const defaultPrice = syncVariants.length > 0 ? parseFloat(syncVariants[0].retail_price) : 0;
+
+            const variants: Variant[] = [];
+            const colors = new Set<string>();
+            const sizes = new Set<string>();
+
+            syncVariants.forEach((variant: any) => {
+                if (variant.color) colors.add(variant.color);
+                if (variant.size) sizes.add(variant.size);
+            });
+
+            Array.from(colors).forEach((color, index) => variants.push({id: `c-${syncProduct.id}-${index}`, type: 'Color', name: color}));
+            Array.from(sizes).forEach((size, index) => variants.push({id: `s-${syncProduct.id}-${index}`, type: 'Size', name: size}));
+
+
+            return {
+                id: String(syncProduct.id),
+                name: syncProduct.name,
+                description: syncVariants.length > 0 ? syncVariants[0].product.description || 'A high-quality product from our collection.' : 'A high-quality product from our collection.',
+                price: defaultPrice,
+                images: syncVariants.map((v: any) => v.files.find((f: any) => f.type === 'preview')?.preview_url).filter(Boolean) || [syncProduct.thumbnail_url],
+                variants: variants,
+            };
+        });
 
     } catch (error) {
         console.error('Exception in getStoreProducts:', error);

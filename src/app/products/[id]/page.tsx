@@ -13,26 +13,7 @@ interface ProductPageProps {
 
 async function getProduct(id: string): Promise<Product | undefined> {
   const products = await getStoreProducts();
-  const product = products.find((p) => p.id === id);
-
-  if (!product) {
-    return undefined;
-  }
-  
-  // In a real app, you would fetch detailed product info here, including variants and price.
-  // For now, we'll use the basic info and add some mock variants/price.
-  return {
-      ...product,
-      description: `High-quality and durable, the ${product.name} is a must-have for your collection. Printed on demand with the finest materials.`,
-      price: 29.99, // Placeholder price
-      variants: [ // Placeholder variants
-        { id: 'v1', type: 'Color', name: 'Black' },
-        { id: 'v2', type: 'Color', name: 'White' },
-        { id: 'v4', type: 'Size', name: 'S' },
-        { id: 'v5', type: 'Size', name: 'M' },
-        { id: 'v6', type: 'Size', name: 'L' },
-      ]
-  }
+  return products.find((p) => p.id === id);
 }
 
 
