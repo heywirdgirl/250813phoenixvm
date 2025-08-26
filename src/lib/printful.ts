@@ -31,7 +31,8 @@ function getPrintfulVariantId(productName: string, size: string, color: string):
 export async function getStoreProducts(): Promise<AppProduct[]> {
     const { PRINTFUL_API_KEY } = process.env;
     if (!PRINTFUL_API_KEY) {
-        throw new Error('Printful API key is not configured.');
+        console.error('Printful API key is not configured.');
+        throw new Error('The Printful API key is missing. Please check your environment variables.');
     }
 
     try {
@@ -42,14 +43,19 @@ export async function getStoreProducts(): Promise<AppProduct[]> {
             },
         });
         
+        const data: any = await response.json();
+
         if (!response.ok) {
-            const errorData = await response.json();
-            console.error('Printful API Error fetching products:', errorData);
-            throw new Error(`Failed to fetch Printful products: ${errorData.result || response.statusText}`);
+            const errorDetails = data.result ? JSON.stringify(data.result) : response.statusText;
+            console.error('Printful API Error fetching products:', errorDetails);
+            throw new Error(`Printful API error: ${data.error?.message || errorDetails}`);
+        }
+        
+        if (!data.result || data.result.length === 0) {
+            console.warn("Printful API returned no synced products.");
+            return [];
         }
 
-        const data: any = await response.json();
-        
         // Transform Printful products to our app's Product type
         return data.result.map((product: any) => ({
             id: String(product.id),
@@ -61,8 +67,9 @@ export async function getStoreProducts(): Promise<AppProduct[]> {
         }));
 
     } catch (error) {
-        console.error('Error in getStoreProducts:', error);
-        return [];
+        console.error('Exception in getStoreProducts:', error);
+        // Re-throw the error so the caller (e.g., the page component) can handle it.
+        throw error;
     }
 }
 

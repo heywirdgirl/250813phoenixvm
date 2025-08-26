@@ -1,19 +1,44 @@
+
 import ProductCard from "@/components/ProductCard";
 import { getStoreProducts } from "@/lib/printful";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Terminal } from "lucide-react";
+import type { Product } from "@/lib/types";
 
 export default async function ProductsPage() {
-  const products = await getStoreProducts();
+  let products: Product[] = [];
+  let error: string | null = null;
 
-  if (!products || products.length === 0) {
+  try {
+    products = await getStoreProducts();
+  } catch (e: any) {
+    console.error('Failed to fetch products for page:', e);
+    error = e.message || "An unknown error occurred.";
+  }
+
+  if (error) {
     return (
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <Alert variant="destructive">
           <Terminal className="h-4 w-4" />
           <AlertTitle>Could Not Load Products</AlertTitle>
           <AlertDescription>
-            We couldn't fetch products from our supplier. This might be due to a configuration issue (e.g., missing API key) or a temporary problem. Please check back later.
+            <p>We couldn't fetch products from our supplier. This might be due to a configuration issue or a temporary problem.</p>
+            <p className="mt-2 font-mono bg-red-900/20 p-2 rounded-md text-xs">Error details: {error}</p>
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+  
+  if (products.length === 0) {
+     return (
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <Alert>
+          <Terminal className="h-4 w-4" />
+          <AlertTitle>No Products Found</AlertTitle>
+          <AlertDescription>
+            It looks like there are no products synced to your Printful store. Please add some products in your Printful dashboard and try again.
           </AlertDescription>
         </Alert>
       </div>
