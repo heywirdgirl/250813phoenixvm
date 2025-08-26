@@ -1,3 +1,4 @@
+
 // src/app/signup/page.tsx
 "use client";
 
@@ -13,6 +14,25 @@ import Link from "next/link";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Terminal } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+
+const getFirebaseAuthErrorMessage = (errorCode: string) => {
+    switch (errorCode) {
+      case "auth/email-already-in-use":
+        return "Địa chỉ email này đã được sử dụng bởi một tài khoản khác.";
+      case "auth/invalid-email":
+        return "Địa chỉ email không hợp lệ.";
+      case "auth/operation-not-allowed":
+        return "Đăng ký bằng email và mật khẩu chưa được bật.";
+      case "auth/weak-password":
+        return "Mật khẩu quá yếu. Vui lòng chọn một mật khẩu mạnh hơn.";
+      case "auth/unauthorized-domain":
+        return "Tên miền này không được phép để xác thực. Vui lòng kiểm tra cài đặt Bảng điều khiển Firebase của bạn và đảm bảo 'localhost' đã được thêm vào.";
+      case "auth/invalid-api-key":
+        return "Khóa API không hợp lệ. Vui lòng kiểm tra lại các giá trị trong tệp .env của bạn.";
+      default:
+        return "Đã xảy ra lỗi không xác định khi đăng ký. Vui lòng thử lại.";
+    }
+  };
 
 // Component con để sử dụng useSearchParams
 function SignupForm() {
@@ -31,36 +51,19 @@ function SignupForm() {
       router.replace(redirect);
     }
   }, [user, authLoading, router, redirect]);
-
-  const getFirebaseAuthErrorMessage = (errorCode: string) => {
-    switch (errorCode) {
-      case "auth/email-already-in-use":
-        return "Địa chỉ email này đã được sử dụng bởi một tài khoản khác.";
-      case "auth/invalid-email":
-        return "Địa chỉ email không hợp lệ.";
-      case "auth/operation-not-allowed":
-        return "Đăng ký bằng email và mật khẩu chưa được bật.";
-      case "auth/weak-password":
-        return "Mật khẩu quá yếu. Vui lòng chọn một mật khẩu mạnh hơn.";
-      case "auth/unauthorized-domain":
-        return "Tên miền này không được phép để xác thực. Vui lòng kiểm tra cài đặt Bảng điều khiển Firebase của bạn.";
-      case "auth/invalid-api-key":
-        return "Khóa API không hợp lệ. Vui lòng kiểm tra tệp .env của bạn."
-      default:
-        return "Đã xảy ra lỗi không xác định. Vui lòng thử lại.";
-    }
-  };
   
   // Xử lý đăng ký bằng email/mật khẩu
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    if (!auth) {
-      setError("Dịch vụ xác thực không khả dụng. Vui lòng thử lại sau.");
-      setLoading(false);
-      return;
+    
+    if (!process.env.NEXT_PUBLIC_FIREBASE_API_KEY) {
+        setError("Khóa API Firebase chưa được cấu hình. Vui lòng kiểm tra tệp .env của bạn.");
+        setLoading(false);
+        return;
     }
+
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       // `onAuthStateChanged` trong AuthContext sẽ xử lý việc cập nhật trạng thái người dùng
@@ -81,11 +84,13 @@ function SignupForm() {
   const handleGoogleSignup = async () => {
     setLoading(true);
     setError(null);
-    if (!auth) {
-      setError("Dịch vụ xác thực không khả dụng. Vui lòng thử lại sau.");
-      setLoading(false);
-      return;
+
+    if (!process.env.NEXT_PUBLIC_FIREBASE_API_KEY) {
+        setError("Khóa API Firebase chưa được cấu hình. Vui lòng kiểm tra tệp .env của bạn.");
+        setLoading(false);
+        return;
     }
+
     try {
       const provider = new GoogleAuthProvider();
       provider.setCustomParameters({ prompt: 'select_account' });

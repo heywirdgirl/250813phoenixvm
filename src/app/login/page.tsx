@@ -1,3 +1,4 @@
+
 // src/app/login/page.tsx
 "use client";
 
@@ -13,6 +14,26 @@ import Link from "next/link";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Terminal } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+
+// Ánh xạ mã lỗi Firebase sang thông báo thân thiện với người dùng
+const getFirebaseAuthErrorMessage = (errorCode: string) => {
+  switch (errorCode) {
+    case "auth/invalid-email":
+      return "Địa chỉ email không hợp lệ.";
+    case "auth/user-disabled":
+      return "Tài khoản người dùng này đã bị vô hiệu hóa.";
+    case "auth/user-not-found":
+    case "auth/wrong-password":
+    case "auth/invalid-credential":
+      return "Email hoặc mật khẩu không đúng.";
+    case "auth/unauthorized-domain":
+      return "Tên miền này không được phép để xác thực. Vui lòng kiểm tra cài đặt Bảng điều khiển Firebase của bạn và đảm bảo 'localhost' đã được thêm vào.";
+    case "auth/invalid-api-key":
+      return "Khóa API không hợp lệ. Vui lòng kiểm tra lại các giá trị trong tệp .env của bạn.";
+    default:
+      return "Đã xảy ra lỗi không xác định khi đăng nhập. Vui lòng thử lại.";
+  }
+};
 
 // Component con chứa logic sử dụng useSearchParams
 function LoginPageContent() {
@@ -31,36 +52,16 @@ function LoginPageContent() {
     }
   }, [user, authLoading, router, redirect]);
 
-  // Ánh xạ mã lỗi Firebase sang thông báo thân thiện với người dùng
-  const getFirebaseAuthErrorMessage = (errorCode: string) => {
-    switch (errorCode) {
-      case "auth/invalid-email":
-        return "Địa chỉ email không hợp lệ.";
-      case "auth/user-disabled":
-        return "Tài khoản người dùng này đã bị vô hiệu hóa.";
-      case "auth/user-not-found":
-      case "auth/wrong-password":
-      case "auth/invalid-credential":
-        return "Email hoặc mật khẩu không đúng.";
-      case "auth/unauthorized-domain":
-        return "Tên miền này không được phép để xác thực. Vui lòng kiểm tra cài đặt Bảng điều khiển Firebase của bạn.";
-      case "auth/invalid-api-key":
-        return "Khóa API không hợp lệ. Vui lòng kiểm tra tệp .env của bạn."
-      default:
-        return "Đã xảy ra lỗi không xác định. Vui lòng thử lại.";
-    }
-  };
-
   // Xử lý đăng nhập bằng email/mật khẩu
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
 
-    if (!auth) {
-      setError("Dịch vụ xác thực không khả dụng. Vui lòng thử lại sau.");
-      setLoading(false);
-      return;
+    if (!process.env.NEXT_PUBLIC_FIREBASE_API_KEY) {
+        setError("Khóa API Firebase chưa được cấu hình. Vui lòng kiểm tra tệp .env của bạn.");
+        setLoading(false);
+        return;
     }
 
     try {
@@ -78,10 +79,10 @@ function LoginPageContent() {
     setLoading(true);
     setError(null);
 
-    if (!auth) {
-      setError("Dịch vụ xác thực không khả dụng. Vui lòng thử lại sau.");
-      setLoading(false);
-      return;
+    if (!process.env.NEXT_PUBLIC_FIREBASE_API_KEY) {
+        setError("Khóa API Firebase chưa được cấu hình. Vui lòng kiểm tra tệp .env của bạn.");
+        setLoading(false);
+        return;
     }
 
     try {
