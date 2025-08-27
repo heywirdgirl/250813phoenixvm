@@ -50,7 +50,8 @@ async function getProductDetails(productId: string, apiKey: string): Promise<any
 export async function getStoreProducts(): Promise<AppProduct[]> {
     const { PRINTFUL_API_KEY } = process.env;
     if (!PRINTFUL_API_KEY) {
-        throw new Error('The Printful API key is missing. Please check your environment variables.');
+        console.warn('The Printful API key is missing. Returning empty product list.');
+        return [];
     }
 
     const listResponse = await fetch(`${PRINTFUL_API_URL}/store/products`, {
@@ -86,8 +87,8 @@ export async function getStoreProducts(): Promise<AppProduct[]> {
             images: [p.sync_product.thumbnail_url].filter(Boolean),
             variants: [],
             sku: p.sync_product.external_id || String(p.sync_product.id),
-            mainImage: p.sync_product.thumbnail_url,
-            thumbnail: p.sync_product.thumbnail_url,
+            mainImage: p.sync_product.thumbnail_url || '',
+            thumbnail: p.sync_product.thumbnail_url || '',
             designImage: '',
             printType: '',
             designFilename: '',
@@ -108,19 +109,22 @@ export async function getStoreProducts(): Promise<AppProduct[]> {
         Array.from(sizes).forEach((size, i) => appVariants.push({id: `s-${p.sync_product.id}-${i}`, type: 'Size', name: size}));
         Array.from(colors).forEach((color, i) => appVariants.push({id: `c-${p.sync_product.id}-${i}`, type: 'Color', name: color}));
 
-        const designFile = firstVariant.files?.find((f: any) => f.visible);
+        const designFile = firstVariant.files?.find((f: any) => f.visible && f.type !== 'preview');
 
         return {
             id: String(p.sync_product.id),
-            name: firstVariant.product.name || p.sync_product.name,
-            description: firstVariant.product.description || "A high-quality product from our collection.",
+            name: firstVariant.product?.name || p.sync_product.name,
+            description: firstVariant.product?.description || "A high-quality product from our collection.",
             price: parseFloat(firstVariant.retail_price) || 0,
             variants: appVariants,
-            images: [firstVariant.product.image, designFile?.preview_url].filter(Boolean), // For legacy compatibility
+            images: [
+                firstVariant.product?.image, 
+                designFile?.preview_url,
+                p.sync_product.thumbnail_url
+            ].filter(Boolean),
             
-            // New detailed fields
             sku: firstVariant.sku || '',
-            mainImage: firstVariant.product.image || '',
+            mainImage: firstVariant.product?.image || '',
             thumbnail: p.sync_product.thumbnail_url || designFile?.thumbnail_url || '',
             designImage: designFile?.preview_url || '',
             printType: designFile?.type || '',

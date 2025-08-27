@@ -1,3 +1,4 @@
+
 import { getStoreProducts } from "@/lib/printful";
 import Image from "next/image";
 import { notFound } from "next/navigation";
@@ -13,6 +14,7 @@ interface ProductPageProps {
 }
 
 async function getProduct(id: string): Promise<Product | undefined> {
+  // Now that getStoreProducts fetches full details, we can use it directly.
   const products = await getStoreProducts();
   return products.find((p) => p.id === id);
 }
@@ -25,11 +27,8 @@ export default async function ProductPage({ params }: ProductPageProps) {
     notFound();
   }
   
-  const allImages = [
-      product.mainImage, 
-      product.designImage, 
-      product.thumbnail
-  ].filter(Boolean); // Filter out any null/undefined images
+  // Use the new, more reliable images array
+  const allImages = product.images;
 
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
