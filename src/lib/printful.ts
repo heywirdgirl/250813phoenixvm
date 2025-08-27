@@ -50,8 +50,7 @@ async function getProductDetails(productId: string, apiKey: string): Promise<any
 export async function getStoreProducts(): Promise<AppProduct[]> {
     const { PRINTFUL_API_KEY } = process.env;
     if (!PRINTFUL_API_KEY) {
-        console.warn('The Printful API key is missing. Returning empty product list.');
-        return [];
+        throw new Error('The Printful API key is missing. Please check your environment variables.');
     }
 
     const listResponse = await fetch(`${PRINTFUL_API_URL}/store/products`, {
@@ -71,53 +70,62 @@ export async function getStoreProducts(): Promise<AppProduct[]> {
         console.warn("Printful API returned no synced products.");
         return [];
     }
-
-    // Fetch details for each product in parallel
+    
     const productDetailsPromises = listData.result.map((p: any) => getProductDetails(String(p.id), PRINTFUL_API_KEY));
     const detailedProducts = await Promise.all(productDetailsPromises);
     
-    // Transform Printful products to our app's Product type
-    return detailedProducts.map((detailedProduct: any): AppProduct => {
-        const syncProduct = detailedProduct.sync_product;
-        const syncVariants = detailedProduct.sync_variants || [];
-        
-        const defaultPriceStr = syncVariants.length > 0 ? syncVariants[0].retail_price : '0';
-        const defaultPrice = parseFloat(defaultPriceStr) || 0;
+    return detailedProducts.map((p: any): AppProduct => {
+        const firstVariant = p.sync_variants?.[0];
+        if (!firstVariant) {
+          // Fallback for products with no variants, though unlikely
+          return {
+            id: String(p.sync_product.id),
+            name: p.sync_product.name,
+            description: "Product details are not available.",
+            price: 0,
+            images: [p.sync_product.thumbnail_url].filter(Boolean),
+            variants: [],
+            sku: p.sync_product.external_id || String(p.sync_product.id),
+            mainImage: p.sync_product.thumbnail_url,
+            thumbnail: p.sync_product.thumbnail_url,
+            designImage: '',
+            printType: '',
+            designFilename: '',
+            imageDimensions: null,
+          };
+        }
 
-        const variants: Variant[] = [];
-        const colors = new Set<string>();
+        const allVariants = p.sync_variants || [];
         const sizes = new Set<string>();
+        const colors = new Set<string>();
 
-        syncVariants.forEach((variant: any) => {
-            // These properties are nested inside the 'product' object of each variant
-            const productInfo = variant.product;
-            if (productInfo) {
-                if (productInfo.color) {
-                    colors.add(productInfo.color);
-                }
-                if (productInfo.size) {
-                    sizes.add(productInfo.size);
-                }
-            }
+        allVariants.forEach((v: any) => {
+            if (v.product?.size) sizes.add(v.product.size);
+            if (v.product?.color) colors.add(v.product.color);
         });
+        
+        const appVariants: Variant[] = [];
+        Array.from(sizes).forEach((size, i) => appVariants.push({id: `s-${p.sync_product.id}-${i}`, type: 'Size', name: size}));
+        Array.from(colors).forEach((color, i) => appVariants.push({id: `c-${p.sync_product.id}-${i}`, type: 'Color', name: color}));
 
-        Array.from(colors).forEach((color, index) => variants.push({id: `c-${syncProduct.id}-${index}`, type: 'Color', name: color}));
-        Array.from(sizes).forEach((size, index) => variants.push({id: `s-${syncProduct.id}-${index}`, type: 'Size', name: size}));
-
-        const images = syncVariants
-            .flatMap((v: any) => v.files)
-            .filter((f: any) => f && f.type === 'preview' && f.preview_url)
-            .map((f: any) => f.preview_url);
-            
-        const uniqueImages = [...new Set(images)];
+        const designFile = firstVariant.files?.find((f: any) => f.visible);
 
         return {
-            id: String(syncProduct.id),
-            name: syncProduct.name,
-            description: "A high-quality product from our collection. More details coming soon!",
-            price: defaultPrice,
-            images: uniqueImages.length > 0 ? uniqueImages : [syncProduct.thumbnail_url],
-            variants: variants,
+            id: String(p.sync_product.id),
+            name: firstVariant.product.name || p.sync_product.name,
+            description: firstVariant.product.description || "A high-quality product from our collection.",
+            price: parseFloat(firstVariant.retail_price) || 0,
+            variants: appVariants,
+            images: [firstVariant.product.image, designFile?.preview_url].filter(Boolean), // For legacy compatibility
+            
+            // New detailed fields
+            sku: firstVariant.sku || '',
+            mainImage: firstVariant.product.image || '',
+            thumbnail: p.sync_product.thumbnail_url || designFile?.thumbnail_url || '',
+            designImage: designFile?.preview_url || '',
+            printType: designFile?.type || '',
+            designFilename: designFile?.filename || '',
+            imageDimensions: designFile ? { width: designFile.width, height: designFile.height } : null
         };
     });
 }

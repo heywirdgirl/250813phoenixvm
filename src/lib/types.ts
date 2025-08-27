@@ -5,12 +5,21 @@ export interface Variant {
 }
 
 export interface Product {
-  id: string; // Corresponds to Printful's product ID
+  id: string;
   name: string;
   description: string;
   price: number;
-  images: string[]; // Corresponds to Printful's thumbnail_url
+  images: string[];
   variants: Variant[];
+  
+  // New detailed fields from Printful
+  sku: string;
+  mainImage: string;
+  thumbnail: string;
+  designImage: string;
+  printType: string;
+  designFilename: string;
+  imageDimensions: { width: number; height: number } | null;
 }
 
 export interface CartItem {
