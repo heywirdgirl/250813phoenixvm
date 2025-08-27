@@ -50,7 +50,8 @@ async function getProductDetails(productId: string, apiKey: string): Promise<any
 export async function getStoreProducts(): Promise<AppProduct[]> {
     const { PRINTFUL_API_KEY } = process.env;
     if (!PRINTFUL_API_KEY) {
-        throw new Error('The Printful API key is missing. Please check your environment variables.');
+        console.warn('The Printful API key is missing. Returning empty product list.');
+        return [];
     }
 
     const listResponse = await fetch(`${PRINTFUL_API_URL}/store/products`, {
@@ -75,13 +76,6 @@ export async function getStoreProducts(): Promise<AppProduct[]> {
     const productDetailsPromises = listData.result.map((p: any) => getProductDetails(String(p.id), PRINTFUL_API_KEY));
     const detailedProducts = await Promise.all(productDetailsPromises);
     
-    // Log the first product's data for analysis
-    if (detailedProducts.length > 0) {
-      console.log('--- PRINTFUL API: FIRST PRODUCT DATA ---');
-      console.log(JSON.stringify(detailedProducts[0], null, 2));
-      console.log('----------------------------------------');
-    }
-
     // Transform Printful products to our app's Product type
     return detailedProducts.map((detailedProduct: any): AppProduct => {
         const syncProduct = detailedProduct.sync_product;
@@ -95,11 +89,15 @@ export async function getStoreProducts(): Promise<AppProduct[]> {
         const sizes = new Set<string>();
 
         syncVariants.forEach((variant: any) => {
-            if (variant.product && variant.product.color) {
-                colors.add(variant.product.color);
-            }
-            if (variant.product && variant.product.size) {
-                sizes.add(variant.product.size);
+            // These properties are nested inside the 'product' object of each variant
+            const productInfo = variant.product;
+            if (productInfo) {
+                if (productInfo.color) {
+                    colors.add(productInfo.color);
+                }
+                if (productInfo.size) {
+                    sizes.add(productInfo.size);
+                }
             }
         });
 
@@ -116,9 +114,7 @@ export async function getStoreProducts(): Promise<AppProduct[]> {
         return {
             id: String(syncProduct.id),
             name: syncProduct.name,
-            description: syncVariants.length > 0 && syncVariants[0].product.description 
-                ? syncVariants[0].product.description 
-                : 'A high-quality product from our collection.',
+            description: "A high-quality product from our collection. More details coming soon!",
             price: defaultPrice,
             images: uniqueImages.length > 0 ? uniqueImages : [syncProduct.thumbnail_url],
             variants: variants,
