@@ -1,5 +1,6 @@
 # Printful Boutique - Kiến trúc dự án
 
+
 Chào mừng bạn đến với Printful Boutique! Đây là một ứng dụng thương mại điện tử Next.js được xây dựng bằng Firebase, ShadCN UI, PayPal, Printful và Genkit cho các tính năng AI.
 
 ## Cây thư mục
