@@ -50,8 +50,7 @@ async function getProductDetails(productId: string, apiKey: string): Promise<any
 export async function getStoreProducts(): Promise<AppProduct[]> {
     const { PRINTFUL_API_KEY } = process.env;
     if (!PRINTFUL_API_KEY) {
-        console.warn('The Printful API key is missing. Please check your environment variables. Returning empty array.');
-        return [];
+        throw new Error('The Printful API key is missing. Please check your environment variables.');
     }
 
     const listResponse = await fetch(`${PRINTFUL_API_URL}/store/products`, {
@@ -84,32 +83,44 @@ export async function getStoreProducts(): Promise<AppProduct[]> {
     }
 
     // Transform Printful products to our app's Product type
-    return detailedProducts.map((detailedProduct: any) => {
+    return detailedProducts.map((detailedProduct: any): AppProduct => {
         const syncProduct = detailedProduct.sync_product;
-        const syncVariants = detailedProduct.sync_variants;
+        const syncVariants = detailedProduct.sync_variants || [];
         
-        // Use the first variant's price as the default display price
-        const defaultPrice = syncVariants.length > 0 ? parseFloat(syncVariants[0].retail_price) : 0;
+        const defaultPriceStr = syncVariants.length > 0 ? syncVariants[0].retail_price : '0';
+        const defaultPrice = parseFloat(defaultPriceStr) || 0;
 
         const variants: Variant[] = [];
         const colors = new Set<string>();
         const sizes = new Set<string>();
 
         syncVariants.forEach((variant: any) => {
-            if (variant.product.color) colors.add(variant.product.color);
-            if (variant.product.size) sizes.add(variant.product.size);
+            if (variant.product && variant.product.color) {
+                colors.add(variant.product.color);
+            }
+            if (variant.product && variant.product.size) {
+                sizes.add(variant.product.size);
+            }
         });
 
         Array.from(colors).forEach((color, index) => variants.push({id: `c-${syncProduct.id}-${index}`, type: 'Color', name: color}));
         Array.from(sizes).forEach((size, index) => variants.push({id: `s-${syncProduct.id}-${index}`, type: 'Size', name: size}));
 
+        const images = syncVariants
+            .flatMap((v: any) => v.files)
+            .filter((f: any) => f && f.type === 'preview' && f.preview_url)
+            .map((f: any) => f.preview_url);
+            
+        const uniqueImages = [...new Set(images)];
 
         return {
             id: String(syncProduct.id),
             name: syncProduct.name,
-            description: syncVariants.length > 0 ? syncVariants[0].product.description || 'A high-quality product from our collection.' : 'A high-quality product from our collection.',
+            description: syncVariants.length > 0 && syncVariants[0].product.description 
+                ? syncVariants[0].product.description 
+                : 'A high-quality product from our collection.',
             price: defaultPrice,
-            images: syncVariants.map((v: any) => v.files.find((f: any) => f.type === 'preview')?.preview_url).filter(Boolean) || [syncProduct.thumbnail_url],
+            images: uniqueImages.length > 0 ? uniqueImages : [syncProduct.thumbnail_url],
             variants: variants,
         };
     });
