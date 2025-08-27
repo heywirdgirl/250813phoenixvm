@@ -50,8 +50,7 @@ async function getProductDetails(productId: string, apiKey: string): Promise<any
 export async function getStoreProducts(): Promise<AppProduct[]> {
     const { PRINTFUL_API_KEY } = process.env;
     if (!PRINTFUL_API_KEY) {
-        console.warn('The Printful API key is missing. Returning empty product list.');
-        return [];
+        throw new Error('The Printful API key is missing. Please check your environment variables.');
     }
 
     const listResponse = await fetch(`${PRINTFUL_API_URL}/store/products`, {
@@ -68,7 +67,6 @@ export async function getStoreProducts(): Promise<AppProduct[]> {
     }
     
     if (!listData.result || listData.result.length === 0) {
-        console.warn("Printful API returned no synced products.");
         return [];
     }
     
@@ -86,13 +84,6 @@ export async function getStoreProducts(): Promise<AppProduct[]> {
             price: 0,
             images: [p.sync_product.thumbnail_url].filter(Boolean),
             variants: [],
-            sku: p.sync_product.external_id || String(p.sync_product.id),
-            mainImage: p.sync_product.thumbnail_url || '',
-            thumbnail: p.sync_product.thumbnail_url || '',
-            designImage: '',
-            printType: '',
-            designFilename: '',
-            imageDimensions: null,
           };
         }
 
@@ -121,15 +112,7 @@ export async function getStoreProducts(): Promise<AppProduct[]> {
                 firstVariant.product?.image, 
                 designFile?.preview_url,
                 p.sync_product.thumbnail_url
-            ].filter(Boolean),
-            
-            sku: firstVariant.sku || '',
-            mainImage: firstVariant.product?.image || '',
-            thumbnail: p.sync_product.thumbnail_url || designFile?.thumbnail_url || '',
-            designImage: designFile?.preview_url || '',
-            printType: designFile?.type || '',
-            designFilename: designFile?.filename || '',
-            imageDimensions: designFile ? { width: designFile.width, height: designFile.height } : null
+            ].filter(Boolean)
         };
     });
 }

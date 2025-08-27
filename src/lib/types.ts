@@ -11,15 +11,6 @@ export interface Product {
   price: number;
   images: string[];
   variants: Variant[];
-  
-  // New detailed fields from Printful
-  sku: string;
-  mainImage: string;
-  thumbnail: string;
-  designImage: string;
-  printType: string;
-  designFilename: string;
-  imageDimensions: { width: number; height: number } | null;
 }
 
 export interface CartItem {

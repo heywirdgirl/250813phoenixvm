@@ -61,7 +61,6 @@ export default async function ProductPage({ params }: ProductPageProps) {
         </div>
         <div className="flex flex-col">
           <h1 className="text-3xl md:text-4xl font-headline font-bold mb-2">{product.name}</h1>
-          <p className="text-sm text-muted-foreground mb-4">SKU: {product.sku}</p>
           <p className="text-3xl font-semibold text-primary mb-6">${product.price.toFixed(2)}</p>
           
           <ProductDetailsClient product={product} />
@@ -70,17 +69,9 @@ export default async function ProductPage({ params }: ProductPageProps) {
             <Tabs defaultValue="description">
               <TabsList>
                 <TabsTrigger value="description">Description</TabsTrigger>
-                <TabsTrigger value="details">Technical Details</TabsTrigger>
               </TabsList>
               <TabsContent value="description" className="prose prose-lg text-muted-foreground mt-4">
                  <p>{product.description}</p>
-              </TabsContent>
-              <TabsContent value="details" className="text-sm text-muted-foreground mt-4">
-                <ul className="space-y-2">
-                    {product.printType && <li><strong>Print Type:</strong> {product.printType}</li>}
-                    {product.designFilename && <li><strong>Design File:</strong> {product.designFilename}</li>}
-                    {product.imageDimensions && <li><strong>Dimensions:</strong> {product.imageDimensions.width} x {product.imageDimensions.height}px</li>}
-                </ul>
               </TabsContent>
             </Tabs>
           </div>
