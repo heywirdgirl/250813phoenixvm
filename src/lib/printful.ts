@@ -50,7 +50,8 @@ async function getProductDetails(productId: string, apiKey: string): Promise<any
 export async function getStoreProducts(): Promise<AppProduct[]> {
     const { PRINTFUL_API_KEY } = process.env;
     if (!PRINTFUL_API_KEY) {
-        throw new Error('The Printful API key is missing. Please check your environment variables.');
+        console.warn('The Printful API key is missing. Please check your environment variables. Returning empty array.');
+        return [];
     }
 
     const listResponse = await fetch(`${PRINTFUL_API_URL}/store/products`, {
@@ -75,6 +76,13 @@ export async function getStoreProducts(): Promise<AppProduct[]> {
     const productDetailsPromises = listData.result.map((p: any) => getProductDetails(String(p.id), PRINTFUL_API_KEY));
     const detailedProducts = await Promise.all(productDetailsPromises);
     
+    // Log the first product's data for analysis
+    if (detailedProducts.length > 0) {
+      console.log('--- PRINTFUL API: FIRST PRODUCT DATA ---');
+      console.log(JSON.stringify(detailedProducts[0], null, 2));
+      console.log('----------------------------------------');
+    }
+
     // Transform Printful products to our app's Product type
     return detailedProducts.map((detailedProduct: any) => {
         const syncProduct = detailedProduct.sync_product;
@@ -88,8 +96,8 @@ export async function getStoreProducts(): Promise<AppProduct[]> {
         const sizes = new Set<string>();
 
         syncVariants.forEach((variant: any) => {
-            if (variant.color) colors.add(variant.color);
-            if (variant.size) sizes.add(variant.size);
+            if (variant.product.color) colors.add(variant.product.color);
+            if (variant.product.size) sizes.add(variant.product.size);
         });
 
         Array.from(colors).forEach((color, index) => variants.push({id: `c-${syncProduct.id}-${index}`, type: 'Color', name: color}));
@@ -109,7 +117,7 @@ export async function getStoreProducts(): Promise<AppProduct[]> {
 
 
 export async function createPrintfulOrder(cartItems: CartItem[], paypalOrder: any, user: User) {
-    const { PRINTFUL_API_KEY } = processenv;
+    const { PRINTFUL_API_KEY } = process.env;
     if (!PRINTFUL_API_KEY) {
         throw new Error('Printful API key is not configured.');
     }
