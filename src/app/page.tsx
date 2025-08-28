@@ -3,20 +3,13 @@ import ProductCard from "@/components/ProductCard";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import Image from "next/image";
-import { getStoreProducts } from "@/lib/printful";
+import { products } from "@/lib/products";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Terminal } from "lucide-react";
 
-export default async function Home() {
-  let allProducts = [];
-  let error: string | null = null;
-  
-  try {
-    allProducts = await getStoreProducts();
-  } catch (e: any) {
-    error = e.message || "An unknown error occurred while fetching products.";
-    console.error("Home page failed to fetch products:", e);
-  }
+export default function Home() {
+  const allProducts = products;
+  const error: string | null = null;
 
   const featuredProducts = allProducts.slice(0, 3);
 

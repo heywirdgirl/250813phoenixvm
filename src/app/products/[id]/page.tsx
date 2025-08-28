@@ -1,11 +1,11 @@
 
-import { getStoreProducts } from "@/lib/printful";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ProductDetailsClient from "@/components/ProductDetailsClient";
 import type { Product } from "@/lib/types";
+import { products } from "@/lib/products";
 
 interface ProductPageProps {
   params: {
@@ -13,21 +13,17 @@ interface ProductPageProps {
   };
 }
 
-async function getProduct(id: string): Promise<Product | undefined> {
-  // Now that getStoreProducts fetches full details, we can use it directly.
-  const products = await getStoreProducts();
+function getProduct(id: string): Product | undefined {
   return products.find((p) => p.id === id);
 }
 
-
-export default async function ProductPage({ params }: ProductPageProps) {
-  const product = await getProduct(params.id);
+export default function ProductPage({ params }: ProductPageProps) {
+  const product = getProduct(params.id);
 
   if (!product) {
     notFound();
   }
   
-  // Use the new, more reliable images array
   const allImages = product.images;
 
   return (
