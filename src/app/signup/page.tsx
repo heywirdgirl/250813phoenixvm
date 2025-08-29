@@ -34,6 +34,22 @@ const getFirebaseAuthErrorMessage = (errorCode: string) => {
     }
   };
 
+const checkFirebaseConfig = () => {
+    const requiredKeys = [
+        'NEXT_PUBLIC_FIREBASE_API_KEY',
+        'NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN',
+        'NEXT_PUBLIC_FIREBASE_PROJECT_ID',
+        'NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET',
+        'NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID',
+        'NEXT_PUBLIC_FIREBASE_APP_ID'
+    ];
+    const missingKeys = requiredKeys.filter(key => !process.env[key]);
+    if (missingKeys.length > 0) {
+        return `Firebase configuration is incomplete. Missing keys: ${missingKeys.join(', ')}. Please check your .env file.`;
+    }
+    return null;
+}
+
 // Component con để sử dụng useSearchParams
 function SignupForm() {
   const [name, setName] = useState("");
@@ -47,6 +63,13 @@ function SignupForm() {
   const { user, loading: authLoading } = useAuth();
 
   useEffect(() => {
+    const configError = checkFirebaseConfig();
+    if (configError) {
+        setError(configError);
+    }
+  }, []);
+
+  useEffect(() => {
     if (!authLoading && user) {
       router.replace(redirect);
     }
@@ -56,13 +79,14 @@ function SignupForm() {
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError(null);
     
-    if (!process.env.NEXT_PUBLIC_FIREBASE_API_KEY) {
-        setError("Khóa API Firebase chưa được cấu hình. Vui lòng kiểm tra tệp .env của bạn.");
+    const configError = checkFirebaseConfig();
+    if (configError) {
+        setError(configError);
         setLoading(false);
         return;
     }
+    setError(null);
 
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
@@ -83,13 +107,14 @@ function SignupForm() {
   // Xử lý đăng ký bằng Google
   const handleGoogleSignup = async () => {
     setLoading(true);
-    setError(null);
 
-    if (!process.env.NEXT_PUBLIC_FIREBASE_API_KEY) {
-        setError("Khóa API Firebase chưa được cấu hình. Vui lòng kiểm tra tệp .env của bạn.");
+    const configError = checkFirebaseConfig();
+    if (configError) {
+        setError(configError);
         setLoading(false);
         return;
     }
+    setError(null);
 
     try {
       const provider = new GoogleAuthProvider();
@@ -157,27 +182,26 @@ function SignupForm() {
             {error && (
               <Alert variant="destructive">
                 <Terminal className="h-4 w-4" />
-                <AlertTitle>Signup Failed</AlertTitle>
+                <AlertTitle>Lỗi Cấu Hình hoặc Đăng Ký</AlertTitle>
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
           </CardContent>
           <CardFooter className="flex flex-col gap-4">
-            <Button className="w-full" type="submit" disabled={loading}>
+            <Button className="w-full" type="submit" disabled={loading || !!checkFirebaseConfig()}>
               {loading ? "Creating Account..." : "Create Account"}
             </Button>
-             {/* Tạm thời ẩn nút đăng ký bằng Google để gỡ lỗi */}
-            {/* 
+            
             <Button
               className="w-full"
               variant="outline"
               type="button"
               onClick={handleGoogleSignup}
-              disabled={loading}
+              disabled={loading || !!checkFirebaseConfig()}
             >
               {loading ? "Processing..." : "Sign Up with Google"}
             </Button>
-            */}
+
             <div className="mt-4 text-center text-sm">
               Already have an account?{' '}
               <Link href={`/login?redirect=${redirect}`} className="underline">
