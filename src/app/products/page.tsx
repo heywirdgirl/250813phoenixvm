@@ -10,12 +10,44 @@ export const revalidate = 86400; // 24 hours in seconds
 export default async function ProductsPage() {
   let products: Product[] = [];
   let error: string | null = null;
+  let configError: string | null = null;
 
-  try {
-    products = await getProducts();
-  } catch (e: any) {
-    console.error(e);
-    error = `Failed to load products. This could be a connection issue or a problem with your Firestore Security Rules. Please make sure you have deployed the firestore.rules file. Details: ${e.message}`;
+  const requiredKeys = [
+      'NEXT_PUBLIC_FIREBASE_API_KEY',
+      'NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN',
+      'NEXT_PUBLIC_FIREBASE_PROJECT_ID',
+      'NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET',
+      'NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID',
+      'NEXT_PUBLIC_FIREBASE_APP_ID'
+  ];
+  const missingKeys = requiredKeys.filter(key => !process.env[key]);
+  if (missingKeys.length > 0) {
+      configError = `Firebase configuration is incomplete. Missing keys: ${missingKeys.join(', ')}. Please check your .env file.`;
+  }
+
+  if (!configError) {
+    try {
+      products = await getProducts();
+    } catch (e: any) {
+      console.error(e);
+      error = `Failed to load products. This could be a connection issue or a problem with your Firestore Security Rules. Please make sure you have deployed the firestore.rules file. Details: ${e.message}`;
+    }
+  }
+
+
+  if (configError) {
+     return (
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <Alert variant="destructive">
+          <Terminal className="h-4 w-4" />
+          <AlertTitle>Configuration Error</AlertTitle>
+          <AlertDescription>
+            <p>There is a problem with the Firebase configuration.</p>
+            <p className="mt-2 font-mono bg-red-900/20 p-2 rounded-md text-xs">{configError}</p>
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
   }
 
   if (error) {
