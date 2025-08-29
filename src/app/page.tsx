@@ -37,7 +37,7 @@ export default async function Home() {
             />
             <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent"></div>
         </div>
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <h1 className="text-4xl md:text-6xl font-headline font-bold text-primary mb-4">
             Elegance, Printed for You
           </h1>
