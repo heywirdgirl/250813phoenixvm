@@ -25,27 +25,26 @@ const transformDocToProduct = (docData: any, id: string): Product | null => {
         ...allSizes.map((size, index) => ({ id: `s-${id}-${index}`, type: 'Size' as 'Size', name: size })),
     ];
     
-    // Extract multiple images: one from the base product and preview URLs from variants
-    const images: string[] = [];
-    if (firstVariant.product?.image) {
-        images.push(firstVariant.product.image);
-    }
-    syncVariants.forEach(v => {
-        if (v.files && v.files[0]?.preview_url) {
-            images.push(v.files[0].preview_url);
-        }
-    });
-     // Use thumbnail_url as a fallback if no other images are found
+    // Extract mockup images from variants. These are the clean product photos.
+    const images = syncVariants
+      .flatMap((v: any) => v.files)
+      .filter((file: any) => file && file.type === 'preview' && file.preview_url)
+      .map((file: any) => file.preview_url);
+
+    // Use the main product thumbnail as a fallback if no preview images are found.
     if (images.length === 0 && syncProduct.thumbnail_url) {
-        images.push(syncProduct.thumbnail_url);
+      images.push(syncProduct.thumbnail_url);
     }
+
+    // Remove duplicate images
+    const uniqueImages = [...new Set(images)];
 
     return {
         id: id,
         name: syncProduct.name || 'Untitled Product',
         description: firstVariant.product?.description || 'No description available.',
         price: parseFloat(firstVariant.retail_price) || 0,
-        images: images,
+        images: uniqueImages,
         variants: variants,
     };
 };
