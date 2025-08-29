@@ -1,40 +1,59 @@
+
+import { collection, getDocs, doc, getDoc } from "firebase/firestore"; 
+import { getFirestore } from "firebase/firestore";
+import { app } from '@/firebase/clientApp';
 import type { Product } from './types';
 
-// This file is now a fallback and is not actively used to display products
-// if the Printful API call is successful.
-export const products: Product[] = [
-  {
-    id: '1',
-    name: 'Classic Unisex T-Shirt',
-    description:
-      'A timeless classic. This unisex t-shirt is perfect for any occasion. Made from 100% premium cotton, it offers both comfort and style. The fabric is pre-shrunk to maintain its shape after washing, and the double-needle stitching on the neckline and sleeves add more durability to what is sure to be a favorite!',
-    price: 24.99,
-    images: ['https://picsum.photos/seed/tshirt-black/600/600', 'https://picsum.photos/seed/tshirt-model/600/600', 'https://picsum.photos/seed/tshirt-detail/600/600'],
-    variants: [
-      { id: 'v1', type: 'Color', name: 'Black' },
-      { id: 'v2', type: 'Color', name: 'White' },
-      { id: 'v3', type: 'Color', name: 'Heather Grey' },
-      { id: 'v4', type: 'Size', name: 'S' },
-      { id: 'v5', type: 'Size', name: 'M' },
-      { id: 'v6', type: 'Size', name: 'L' },
-      { id: 'v7', type: 'Size', name: 'XL' },
-    ],
-  },
-  {
-    id: '2',
-    name: 'Premium Embroidered Hoodie',
-    description:
-      'Stay cozy and stylish with our premium hoodie. It features a high-quality embroidered logo, a soft fleece interior, and a comfortable fit. Perfect for chilly evenings and casual outings.',
-    price: 59.99,
-    images: ['https://picsum.photos/seed/hoodie-navy/600/600', 'https://picsum.photos/seed/hoodie-model/600/600', 'https://picsum.photos/seed/hoodie-detail/600/600'],
-    variants: [
-      { id: 'v8', type: 'Color', name: 'Navy Blue' },
-      { id: 'v9', type: 'Color', name: 'Maroon' },
-      { id: 'v10', type: 'Color', name: 'Charcoal' },
-      { id: 'v11', type: 'Size', name: 'S' },
-      { id: 'v12', type: 'Size', name: 'M' },
-      { id: 'v13', type: 'Size', name: 'L' },
-      { id: 'v14', type: 'Size', name: 'XL' },
-    ],
-  }
-];
+// Initialize Firestore
+const db = getFirestore(app);
+
+// Function to fetch all products from Firestore
+export async function getProducts(): Promise<Product[]> {
+    try {
+        const productsCol = collection(db, 'products');
+        const productSnapshot = await getDocs(productsCol);
+        const productList = productSnapshot.docs.map(doc => {
+            const data = doc.data();
+            return {
+                id: doc.id,
+                name: data.name || '',
+                description: data.description || '',
+                price: data.price || 0,
+                images: data.images || [],
+                variants: data.variants || [],
+            } as Product;
+        });
+        return productList;
+    } catch (error) {
+        console.error("Error fetching products from Firestore: ", error);
+        // Return an empty array or handle the error as needed
+        return [];
+    }
+}
+
+// Function to fetch a single product by its ID from Firestore
+export async function getProduct(id: string): Promise<Product | undefined> {
+    try {
+        const productRef = doc(db, 'products', id);
+        const productSnap = await getDoc(productRef);
+
+        if (!productSnap.exists()) {
+            console.warn(`Product with ID ${id} not found in Firestore.`);
+            return undefined;
+        }
+
+        const data = productSnap.data();
+        return {
+            id: productSnap.id,
+            name: data.name || '',
+            description: data.description || '',
+            price: data.price || 0,
+            images: data.images || [],
+            variants: data.variants || [],
+        } as Product;
+
+    } catch (error) {
+        console.error(`Error fetching product with ID ${id} from Firestore: `, error);
+        return undefined;
+    }
+}

@@ -5,7 +5,7 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ProductDetailsClient from "@/components/ProductDetailsClient";
 import type { Product } from "@/lib/types";
-import { products } from "@/lib/products";
+import { getProduct } from "@/lib/products";
 
 interface ProductPageProps {
   params: {
@@ -13,12 +13,8 @@ interface ProductPageProps {
   };
 }
 
-function getProduct(id: string): Product | undefined {
-  return products.find((p) => p.id === id);
-}
-
-export default function ProductPage({ params }: ProductPageProps) {
-  const product = getProduct(params.id);
+export default async function ProductPage({ params }: ProductPageProps) {
+  const product = await getProduct(params.id);
 
   if (!product) {
     notFound();

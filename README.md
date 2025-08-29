@@ -54,7 +54,7 @@ Chào mừng bạn đến với Printful Boutique! Đây là một ứng dụng 
 │   │   └── use-toast.ts                 # Hook để hiển thị thông báo toast.
 │   ├── lib
 │   │   ├── paypal.ts                    # Chứa logic để tương tác với PayPal API (tạo/nhận đơn hàng).
-│   │   ├── products.ts                  # Dữ liệu sản phẩm giả.
+│   │   ├── products.ts                  # Chứa logic để lấy dữ liệu sản phẩm từ Firestore.
 │   │   ├── types.ts                     # Các định nghĩa TypeScript cho toàn bộ ứng dụng.
 │   │   └── utils.ts                     # Các hàm tiện ích.
 ├── .env                                 # Các biến môi trường (khóa API Firebase, PayPal).
@@ -74,7 +74,7 @@ Chào mừng bạn đến với Printful Boutique! Đây là một ứng dụng 
 - **`src/hooks`**: Các React Hook tùy chỉnh.
 - **`src/lib`**: Thư viện hỗ trợ.
     - **`paypal.ts`**: Tích hợp với PayPal API để xử lý các giao dịch thanh toán.
-    - **`products.ts`**: Dữ liệu sản phẩm mẫu.
+    - **`products.ts`**: Chứa logic để lấy dữ liệu sản phẩm từ cơ sở dữ liệu Firestore.
     - **`types.ts`**: Các định nghĩa TypeScript.
     - **`utils.ts`**: Các hàm tiện ích.
 - **`.env`**: Lưu trữ các thông tin nhạy cảm như khóa API của Firebase và PayPal.

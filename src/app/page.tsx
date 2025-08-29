@@ -3,13 +3,21 @@ import ProductCard from "@/components/ProductCard";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import Image from "next/image";
-import { products } from "@/lib/products";
+import { getProducts } from "@/lib/products";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Terminal } from "lucide-react";
+import type { Product } from "@/lib/types";
 
-export default function Home() {
-  const allProducts = products;
-  const error: string | null = null;
+export default async function Home() {
+  let allProducts: Product[] = [];
+  let error: string | null = null;
+  
+  try {
+    allProducts = await getProducts();
+  } catch (e: any) {
+    console.error(e);
+    error = "Failed to load products. Please check the connection to the data source.";
+  }
 
   const featuredProducts = allProducts.slice(0, 3);
 
@@ -50,7 +58,7 @@ export default function Home() {
                <Terminal className="h-4 w-4" />
                <AlertTitle>Could Not Load Products</AlertTitle>
                <AlertDescription>
-                 There was an issue fetching products from our supplier. Please try again later.
+                 {error}
                </AlertDescription>
              </Alert>
           ) : featuredProducts.length > 0 ? (

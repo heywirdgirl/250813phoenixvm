@@ -1,13 +1,20 @@
 
 import ProductCard from "@/components/ProductCard";
-import { products as allProducts } from "@/lib/products";
+import { getProducts } from "@/lib/products";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Terminal } from "lucide-react";
 import type { Product } from "@/lib/types";
 
-export default function ProductsPage() {
-  const products: Product[] = allProducts;
-  const error: string | null = null;
+export default async function ProductsPage() {
+  let products: Product[] = [];
+  let error: string | null = null;
+  
+  try {
+    products = await getProducts();
+  } catch(e: any) {
+    console.error(e);
+    error = "Failed to load products. Please check the connection to the data source.";
+  }
 
   if (error) {
     return (
@@ -16,7 +23,7 @@ export default function ProductsPage() {
           <Terminal className="h-4 w-4" />
           <AlertTitle>Could Not Load Products</AlertTitle>
           <AlertDescription>
-            <p>We couldn't fetch products from our supplier. This might be due to a configuration issue or a temporary problem.</p>
+            <p>We couldn't fetch products from our data source. This might be due to a configuration issue or a temporary problem.</p>
             <p className="mt-2 font-mono bg-red-900/20 p-2 rounded-md text-xs">Error details: {error}</p>
           </AlertDescription>
         </Alert>
@@ -31,7 +38,7 @@ export default function ProductsPage() {
           <Terminal className="h-4 w-4" />
           <AlertTitle>No Products Found</AlertTitle>
           <AlertDescription>
-            It looks like there are no products available. Please check back later.
+            It looks like there are no products available in the 'products' collection in Firestore. Please check back later.
           </AlertDescription>
         </Alert>
       </div>
