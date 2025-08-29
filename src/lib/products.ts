@@ -1,11 +1,7 @@
 
 import { collection, getDocs, doc, getDoc } from "firebase/firestore"; 
-import { getFirestore } from "firebase/firestore";
-import { app } from '@/firebase/clientApp';
+import { db } from '@/firebase/clientApp';
 import type { Product } from './types';
-
-// Initialize Firestore
-const db = getFirestore(app);
 
 // Function to fetch all products from Firestore
 export async function getProducts(): Promise<Product[]> {
@@ -26,8 +22,7 @@ export async function getProducts(): Promise<Product[]> {
         return productList;
     } catch (error) {
         console.error("Error fetching products from Firestore: ", error);
-        // Return an empty array or handle the error as needed
-        return [];
+        throw error;
     }
 }
 
@@ -54,6 +49,6 @@ export async function getProduct(id: string): Promise<Product | undefined> {
 
     } catch (error) {
         console.error(`Error fetching product with ID ${id} from Firestore: `, error);
-        return undefined;
+        throw error;
     }
 }

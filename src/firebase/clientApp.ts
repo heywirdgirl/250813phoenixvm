@@ -1,6 +1,7 @@
 
 import { initializeApp, getApps, getApp, type FirebaseApp } from "firebase/app";
 import { getAuth, type Auth } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
     apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -11,8 +12,15 @@ const firebaseConfig = {
     appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-// Initialize Firebase for SSR and Client
-const app: FirebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
-const auth: Auth = getAuth(app);
+// Khởi tạo Firebase một cách an toàn cho cả SSR và CSR
+let app: FirebaseApp;
+if (getApps().length === 0) {
+  app = initializeApp(firebaseConfig);
+} else {
+  app = getApp();
+}
 
-export { app, auth };
+const auth: Auth = getAuth(app);
+const db = getFirestore(app);
+
+export { app, auth, db };
