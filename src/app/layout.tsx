@@ -25,7 +25,9 @@ export default function RootLayout({
       <body className="font-body antialiased flex flex-col min-h-full">
         <Providers>
           <Header />
-          <main className="flex-grow">{children}</main>
+          <main>
+            <div className="flex-grow">{children}</div>
+          </main>
           <Footer />
         </Providers>
       </body>
