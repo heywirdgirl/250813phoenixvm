@@ -8,12 +8,23 @@ import type { Product } from "@/lib/types";
 export default async function ProductsPage() {
   let products: Product[] = [];
   let error: string | null = null;
-  
-  try {
-    products = await getProducts();
-  } catch(e: any) {
-    console.error(e);
-    error = "Failed to load products. Please check the connection to the data source.";
+
+  // Kiểm tra xem các biến môi trường Firebase có tồn tại không
+  const firebaseConfigured = 
+    process.env.NEXT_PUBLIC_FIREBASE_API_KEY &&
+    process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN &&
+    process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+
+  if (!firebaseConfigured) {
+    error = "Firebase environment variables are not configured. Please check your .env file.";
+  } else {
+    try {
+      products = await getProducts();
+    } catch(e: any) {
+      console.error(e);
+      // Cung cấp thông báo lỗi chi tiết hơn
+      error = `Failed to load products. This could be a connection issue or a problem with your Firestore Security Rules. Details: ${e.message}`;
+    }
   }
 
   if (error) {
@@ -23,8 +34,8 @@ export default async function ProductsPage() {
           <Terminal className="h-4 w-4" />
           <AlertTitle>Could Not Load Products</AlertTitle>
           <AlertDescription>
-            <p>We couldn't fetch products from our data source. This might be due to a configuration issue or a temporary problem.</p>
-            <p className="mt-2 font-mono bg-red-900/20 p-2 rounded-md text-xs">Error details: {error}</p>
+            <p>We couldn't fetch products from our data source. Please check the error details below.</p>
+            <p className="mt-2 font-mono bg-red-900/20 p-2 rounded-md text-xs">{error}</p>
           </AlertDescription>
         </Alert>
       </div>
@@ -38,7 +49,7 @@ export default async function ProductsPage() {
           <Terminal className="h-4 w-4" />
           <AlertTitle>No Products Found</AlertTitle>
           <AlertDescription>
-            It looks like there are no products available in the 'products' collection in Firestore. Please check back later.
+            The connection to Firestore was successful, but the 'products' collection is empty or does not exist. Please add products to your Firestore database.
           </AlertDescription>
         </Alert>
       </div>
