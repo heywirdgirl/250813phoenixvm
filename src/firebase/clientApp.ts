@@ -13,14 +13,14 @@ const firebaseConfig = {
 };
 
 // Khởi tạo Firebase một cách an toàn cho cả SSR và CSR
-let app: FirebaseApp;
-if (getApps().length === 0) {
-  app = initializeApp(firebaseConfig);
-} else {
-  app = getApp();
-}
-
-const auth: Auth = getAuth(app);
+const app: FirebaseApp = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-export { app, auth, db };
+// Chỉ khởi tạo auth ở phía máy khách để tránh lỗi phía máy chủ
+let auth: Auth;
+if (typeof window !== 'undefined') {
+  auth = getAuth(app);
+}
+
+// Xuất các biến đã khởi tạo (auth có thể là undefined ở phía máy chủ)
+export { app, db, auth };
