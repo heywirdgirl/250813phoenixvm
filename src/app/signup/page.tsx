@@ -4,8 +4,8 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { createUserWithEmailAndPassword, updateProfile, GoogleAuthProvider, signInWithPopup, UserCredential } from "firebase/auth";
-import { auth } from "@/firebase/clientApp";
+import { createUserWithEmailAndPassword, updateProfile, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import { auth, isFirebaseConfigValid } from "@/firebase/clientApp";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -34,23 +34,9 @@ const getFirebaseAuthErrorMessage = (errorCode: string) => {
     }
   };
 
-const checkFirebaseConfig = () => {
-    const requiredKeys = [
-        'NEXT_PUBLIC_FIREBASE_API_KEY',
-        'NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN',
-        'NEXT_PUBLIC_FIREBASE_PROJECT_ID',
-        'NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET',
-        'NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID',
-        'NEXT_PUBLIC_FIREBASE_APP_ID'
-    ];
-    const missingKeys = requiredKeys.filter(key => !process.env[key]);
-    if (missingKeys.length > 0) {
-        return `Firebase configuration is incomplete. Missing keys: ${missingKeys.join(', ')}. Please check your .env file.`;
-    }
-    return null;
-}
+const firebaseConfigError = "Cấu hình Firebase chưa hoàn tất. Vui lòng kiểm tra lại các biến môi trường NEXT_PUBLIC_... trong tệp .env của bạn và khởi động lại máy chủ phát triển.";
 
-// Component con để sử dụng useSearchParams
+// Component with logic using useSearchParams
 function SignupForm() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -61,13 +47,13 @@ function SignupForm() {
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect") || "/";
   const { user, loading: authLoading } = useAuth();
+  const isConfigValid = isFirebaseConfigValid();
 
   useEffect(() => {
-    const configError = checkFirebaseConfig();
-    if (configError) {
-        setError(configError);
+    if (!isConfigValid) {
+        setError(firebaseConfigError);
     }
-  }, []);
+  }, [isConfigValid]);
 
   useEffect(() => {
     if (!authLoading && user) {
@@ -75,23 +61,19 @@ function SignupForm() {
     }
   }, [user, authLoading, router, redirect]);
   
-  // Xử lý đăng ký bằng email/mật khẩu
+  // Handle email/password signup
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    
-    const configError = checkFirebaseConfig();
-    if (configError) {
-        setError(configError);
+    setError(null);
+    if (!isConfigValid) {
+        setError(firebaseConfigError);
         setLoading(false);
         return;
     }
-    setError(null);
 
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      // `onAuthStateChanged` trong AuthContext sẽ xử lý việc cập nhật trạng thái người dùng
-      // và chuyển hướng. Chỉ cần cập nhật hồ sơ ở đây.
       if (userCredential.user) {
          await updateProfile(userCredential.user, {
             displayName: name,
@@ -104,23 +86,20 @@ function SignupForm() {
     }
   };
 
-  // Xử lý đăng ký bằng Google
+  // Handle Google signup
   const handleGoogleSignup = async () => {
     setLoading(true);
-
-    const configError = checkFirebaseConfig();
-    if (configError) {
-        setError(configError);
+    setError(null);
+    if (!isConfigValid) {
+        setError(firebaseConfigError);
         setLoading(false);
         return;
     }
-    setError(null);
 
     try {
       const provider = new GoogleAuthProvider();
       provider.setCustomParameters({ prompt: 'select_account' });
       await signInWithPopup(auth, provider);
-       // `onAuthStateChanged` sẽ xử lý chuyển hướng
     } catch (error: any) {
       setError(getFirebaseAuthErrorMessage(error.code));
     } finally {
@@ -128,7 +107,7 @@ function SignupForm() {
     }
   };
 
-  if (authLoading || user) {
+  if (authLoading || (user && isConfigValid)) {
     return (
       <div className="flex justify-center items-center h-screen">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
@@ -155,6 +134,7 @@ function SignupForm() {
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
+                disabled={!isConfigValid}
               />
             </div>
             <div className="grid gap-2">
@@ -166,6 +146,7 @@ function SignupForm() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                disabled={!isConfigValid}
               />
             </div>
             <div className="grid gap-2">
@@ -177,6 +158,7 @@ function SignupForm() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 minLength={6}
+                disabled={!isConfigValid}
               />
             </div>
             {error && (
@@ -188,7 +170,7 @@ function SignupForm() {
             )}
           </CardContent>
           <CardFooter className="flex flex-col gap-4">
-            <Button className="w-full" type="submit" disabled={loading || !!checkFirebaseConfig()}>
+            <Button className="w-full" type="submit" disabled={loading || !isConfigValid}>
               {loading ? "Creating Account..." : "Create Account"}
             </Button>
             
@@ -197,7 +179,7 @@ function SignupForm() {
               variant="outline"
               type="button"
               onClick={handleGoogleSignup}
-              disabled={loading || !!checkFirebaseConfig()}
+              disabled={loading || !isConfigValid}
             >
               {loading ? "Processing..." : "Sign Up with Google"}
             </Button>
@@ -215,7 +197,7 @@ function SignupForm() {
   );
 }
 
-// Component chính bọc trong Suspense
+// Main component wrapped in Suspense
 export default function SignupPage() {
   return (
     <Suspense

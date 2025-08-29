@@ -1,9 +1,9 @@
 
-import { initializeApp, getApps, getApp, type FirebaseApp } from "firebase/app";
+import { initializeApp, getApps, getApp, type FirebaseApp, type FirebaseOptions } from "firebase/app";
 import { getAuth, type Auth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
-const firebaseConfig = {
+const firebaseConfig: FirebaseOptions = {
     apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
     authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
     projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
@@ -12,15 +12,22 @@ const firebaseConfig = {
     appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-// Khởi tạo Firebase một cách an toàn cho cả SSR và CSR
+// Function to check if the Firebase config is valid
+export const isFirebaseConfigValid = () => {
+    return Object.values(firebaseConfig).every(value => Boolean(value));
+};
+
+// Initialize Firebase one time
 const app: FirebaseApp = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// Chỉ khởi tạo auth ở phía máy khách để tránh lỗi phía máy chủ
+// Initialize auth only on the client-side
 let auth: Auth;
 if (typeof window !== 'undefined') {
-  auth = getAuth(app);
+  // Only initialize auth if config is valid to prevent errors
+  if (isFirebaseConfigValid()) {
+    auth = getAuth(app);
+  }
 }
 
-// Xuất các biến đã khởi tạo (auth có thể là undefined ở phía máy chủ)
-export { app, db, auth };
+export { app, db, auth, firebaseConfig };

@@ -5,7 +5,7 @@
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
-import { auth } from "@/firebase/clientApp";
+import { auth, isFirebaseConfigValid } from "@/firebase/clientApp";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -15,7 +15,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Terminal } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
-// Ánh xạ mã lỗi Firebase sang thông báo thân thiện với người dùng
+// Map Firebase error codes to user-friendly messages
 const getFirebaseAuthErrorMessage = (errorCode: string) => {
   switch (errorCode) {
     case "auth/invalid-email":
@@ -35,23 +35,9 @@ const getFirebaseAuthErrorMessage = (errorCode: string) => {
   }
 };
 
-const checkFirebaseConfig = () => {
-    const requiredKeys = [
-        'NEXT_PUBLIC_FIREBASE_API_KEY',
-        'NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN',
-        'NEXT_PUBLIC_FIREBASE_PROJECT_ID',
-        'NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET',
-        'NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID',
-        'NEXT_PUBLIC_FIREBASE_APP_ID'
-    ];
-    const missingKeys = requiredKeys.filter(key => !process.env[key]);
-    if (missingKeys.length > 0) {
-        return `Firebase configuration is incomplete. Missing keys: ${missingKeys.join(', ')}. Please check your .env file.`;
-    }
-    return null;
-}
+const firebaseConfigError = "Cấu hình Firebase chưa hoàn tất. Vui lòng kiểm tra lại các biến môi trường NEXT_PUBLIC_... trong tệp .env của bạn và khởi động lại máy chủ phát triển.";
 
-// Component con chứa logic sử dụng useSearchParams
+// Component with logic using useSearchParams
 function LoginPageContent() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -61,13 +47,13 @@ function LoginPageContent() {
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect") || "/";
   const { user, loading: authLoading } = useAuth();
+  const isConfigValid = isFirebaseConfigValid();
 
   useEffect(() => {
-    const configError = checkFirebaseConfig();
-    if (configError) {
-        setError(configError);
+    if (!isConfigValid) {
+        setError(firebaseConfigError);
     }
-  }, []);
+  }, [isConfigValid]);
 
   useEffect(() => {
     if (!authLoading && user) {
@@ -75,55 +61,50 @@ function LoginPageContent() {
     }
   }, [user, authLoading, router, redirect]);
 
-  // Xử lý đăng nhập bằng email/mật khẩu
+  // Handle email/password login
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    
-    const configError = checkFirebaseConfig();
-    if (configError) {
-        setError(configError);
+    setError(null);
+    if (!isConfigValid) {
+        setError(firebaseConfigError);
         setLoading(false);
         return;
     }
-    setError(null);
-
 
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      // useEffect sẽ xử lý chuyển hướng
     } catch (error: any) {
-      console.error("Lỗi đăng nhập bằng email:", error.code, error.message);
+      console.error("Email login error:", error.code, error.message);
       setError(getFirebaseAuthErrorMessage(error.code));
+    } finally {
       setLoading(false);
     }
   };
 
-  // Xử lý đăng nhập bằng Google
+  // Handle Google login
   const handleGoogleSignIn = async () => {
     setLoading(true);
-
-    const configError = checkFirebaseConfig();
-    if (configError) {
-        setError(configError);
+    setError(null);
+    if (!isConfigValid) {
+        setError(firebaseConfigError);
         setLoading(false);
         return;
     }
-    setError(null);
 
     try {
       const provider = new GoogleAuthProvider();
       provider.setCustomParameters({ prompt: 'select_account' });
       await signInWithPopup(auth, provider);
-      // useEffect sẽ xử lý chuyển hướng
     } catch (error: any) {
-      console.error("Lỗi đăng nhập bằng Google:", error.code, error.message);
+      console.error("Google login error:", error.code, error.message);
       setError(getFirebaseAuthErrorMessage(error.code));
+    } finally {
       setLoading(false);
     }
   };
 
-  if (authLoading || user) {
+  if (authLoading || (user && isConfigValid)) {
     return (
       <div className="flex justify-center items-center h-screen">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
@@ -151,6 +132,7 @@ function LoginPageContent() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                disabled={!isConfigValid}
               />
             </div>
             <div className="grid gap-2">
@@ -161,6 +143,7 @@ function LoginPageContent() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                disabled={!isConfigValid}
               />
             </div>
             {error && (
@@ -172,7 +155,7 @@ function LoginPageContent() {
             )}
           </CardContent>
           <CardFooter className="flex flex-col gap-4">
-            <Button className="w-full" type="submit" disabled={loading || !!checkFirebaseConfig()}>
+            <Button className="w-full" type="submit" disabled={loading || !isConfigValid}>
               {loading ? "Đang đăng nhập..." : "Đăng nhập"}
             </Button>
             
@@ -181,7 +164,7 @@ function LoginPageContent() {
               variant="outline"
               type="button"
               onClick={handleGoogleSignIn}
-              disabled={loading || !!checkFirebaseConfig()}
+              disabled={loading || !isConfigValid}
             >
               {loading ? "Đang xử lý..." : "Đăng nhập với Google"}
             </Button>

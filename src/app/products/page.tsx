@@ -4,6 +4,7 @@ import { getProducts } from "@/lib/products";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Terminal } from "lucide-react";
 import type { Product } from "@/lib/types";
+import { isFirebaseConfigValid } from "@/firebase/clientApp";
 
 export const revalidate = 86400; // 24 hours in seconds
 
@@ -12,17 +13,8 @@ export default async function ProductsPage() {
   let error: string | null = null;
   let configError: string | null = null;
 
-  const requiredKeys = [
-      'NEXT_PUBLIC_FIREBASE_API_KEY',
-      'NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN',
-      'NEXT_PUBLIC_FIREBASE_PROJECT_ID',
-      'NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET',
-      'NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID',
-      'NEXT_PUBLIC_FIREBASE_APP_ID'
-  ];
-  const missingKeys = requiredKeys.filter(key => !process.env[key]);
-  if (missingKeys.length > 0) {
-      configError = `Firebase configuration is incomplete. Missing keys: ${missingKeys.join(', ')}. Please check your .env file.`;
+  if (!isFirebaseConfigValid()) {
+      configError = `Cấu hình Firebase chưa hoàn tất. Vui lòng kiểm tra lại các biến môi trường NEXT_PUBLIC_... trong tệp .env của bạn và khởi động lại máy chủ phát triển.`;
   }
 
   if (!configError) {
@@ -30,7 +22,7 @@ export default async function ProductsPage() {
       products = await getProducts();
     } catch (e: any) {
       console.error(e);
-      error = `Failed to load products. This could be a connection issue or a problem with your Firestore Security Rules. Please make sure you have deployed the firestore.rules file. Details: ${e.message}`;
+      error = `Không thể tải sản phẩm. Đây có thể là sự cố kết nối hoặc sự cố với Quy tắc bảo mật Firestore của bạn. Vui lòng đảm bảo bạn đã triển khai tệp firestore.rules. Chi tiết: ${e.message}`;
     }
   }
 
@@ -40,9 +32,9 @@ export default async function ProductsPage() {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <Alert variant="destructive">
           <Terminal className="h-4 w-4" />
-          <AlertTitle>Configuration Error</AlertTitle>
+          <AlertTitle>Lỗi cấu hình</AlertTitle>
           <AlertDescription>
-            <p>There is a problem with the Firebase configuration.</p>
+            <p>Có một sự cố với cấu hình Firebase.</p>
             <p className="mt-2 font-mono bg-red-900/20 p-2 rounded-md text-xs">{configError}</p>
           </AlertDescription>
         </Alert>
@@ -55,9 +47,9 @@ export default async function ProductsPage() {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <Alert variant="destructive">
           <Terminal className="h-4 w-4" />
-          <AlertTitle>Could Not Load Products</AlertTitle>
+          <AlertTitle>Không thể tải sản phẩm</AlertTitle>
           <AlertDescription>
-            <p>We couldn't fetch products from our data source. Please check the error details below.</p>
+            <p>Chúng tôi không thể tìm nạp sản phẩm từ nguồn dữ liệu của mình. Vui lòng kiểm tra chi tiết lỗi bên dưới.</p>
             <p className="mt-2 font-mono bg-red-900/20 p-2 rounded-md text-xs">{error}</p>
           </AlertDescription>
         </Alert>
@@ -70,9 +62,9 @@ export default async function ProductsPage() {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <Alert>
           <Terminal className="h-4 w-4" />
-          <AlertTitle>No Products Found</AlertTitle>
+          <AlertTitle>Không tìm thấy sản phẩm</AlertTitle>
           <AlertDescription>
-            The connection to Firestore was successful, but the 'products' collection is empty or does not exist. Please add products to your Firestore database.
+            Kết nối với Firestore đã thành công, nhưng collection 'products' trống hoặc không tồn tại. Vui lòng thêm sản phẩm vào cơ sở dữ liệu Firestore của bạn.
           </AlertDescription>
         </Alert>
       </div>
