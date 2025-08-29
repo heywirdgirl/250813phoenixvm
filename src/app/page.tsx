@@ -8,6 +8,8 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Terminal } from "lucide-react";
 import type { Product } from "@/lib/types";
 
+export const revalidate = 86400; // 24 hours in seconds
+
 export default async function Home() {
   let allProducts: Product[] = [];
   let error: string | null = null;

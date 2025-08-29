@@ -7,6 +7,8 @@ import ProductDetailsClient from "@/components/ProductDetailsClient";
 import type { Product } from "@/lib/types";
 import { getProduct } from "@/lib/products";
 
+export const revalidate = 86400; // 24 hours in seconds
+
 interface ProductPageProps {
   params: {
     id: string;
