@@ -1,3 +1,4 @@
+
 import Link from "next/link";
 import Image from "next/image";
 import type { Product } from "@/lib/types";
@@ -9,13 +10,15 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product }: ProductCardProps) {
+  const imageUrl = product.images && product.images.length > 0 ? product.images[0] : 'https://placehold.co/600x600/E91E63/FFFFFF?text=No+Image';
+
   return (
     <Card className="flex flex-col h-full overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
       <CardHeader className="p-0">
         <Link href={`/products/${product.id}`}>
             <div className="aspect-square relative w-full">
                 <Image
-                    src={product.images[0]}
+                    src={imageUrl}
                     alt={product.name}
                     fill
                     className="object-cover"
