@@ -10,8 +10,9 @@ const transformDocToProduct = (docData: any, id: string): Product | null => {
     const syncProduct = docData.sync_product;
     const syncVariants = docData.sync_variants;
 
+    // Defensive check: Ensure essential data structures exist and are of the correct type.
     if (!syncProduct || !Array.isArray(syncVariants) || syncVariants.length === 0) {
-        console.warn(`Skipping product with ID ${id} due to missing sync_product or sync_variants.`);
+        console.warn(`Skipping product with ID ${id} due to missing or invalid sync_product or sync_variants.`);
         return null;
     }
     
@@ -27,7 +28,7 @@ const transformDocToProduct = (docData: any, id: string): Product | null => {
     
     // Extract mockup images from variants. These are the clean product photos.
     const images = syncVariants
-      .flatMap((v: any) => v.files)
+      .flatMap((v: any) => v.files || []) // Ensure v.files exists
       .filter((file: any) => file && file.type === 'preview' && file.preview_url)
       .map((file: any) => file.preview_url);
 
@@ -36,13 +37,18 @@ const transformDocToProduct = (docData: any, id: string): Product | null => {
       images.push(syncProduct.thumbnail_url);
     }
 
+    // If still no images, add a placeholder.
+    if (images.length === 0) {
+        images.push('https://placehold.co/600x600/E91E63/FFFFFF?text=No+Image');
+    }
+
     // Remove duplicate images
     const uniqueImages = [...new Set(images)];
 
     return {
         id: id,
         name: syncProduct.name || 'Untitled Product',
-        description: firstVariant.product?.description || 'No description available.',
+        description: syncProduct.description || 'No description available.',
         price: parseFloat(firstVariant.retail_price) || 0,
         images: uniqueImages,
         variants: variants,

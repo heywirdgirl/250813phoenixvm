@@ -32,7 +32,11 @@ export async function handleSuggestTags(
 // PayPal Actions
 export async function createOrderAction(cartItems: CartItem[]) {
     try {
-        return await createPayPalOrder(cartItems);
+        const response = await createPayPalOrder(cartItems);
+        if (response.id) {
+            return response;
+        }
+        throw new Error(response.error || "Failed to create order ID.");
     } catch (error) {
         console.error("Failed to create PayPal order:", error);
         return { error: "Could not create PayPal order. Please try again." };
@@ -53,13 +57,13 @@ export async function captureOrderAction(orderID: string, cartItems: CartItem[],
             return {
                 success: true,
                 orderId: mockOrderId,
-                trackingNumber: mockOrderId, 
+                trackingNumber: `PB${mockOrderId.toUpperCase()}`,
             };
         } else {
             throw new Error('PayPal payment not completed.');
         }
-    } catch (error) {
+    } catch (error: any) {
         console.error("Failed to capture order:", error);
-        return { error: "Payment could not be processed. Please try again." };
+        return { error: error.message || "Payment could not be processed. Please try again." };
     }
 }
