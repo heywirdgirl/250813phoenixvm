@@ -81,6 +81,7 @@ export async function getProduct(id: string): Promise<Product | undefined> {
 
     } catch (error) {
         console.error(`Error fetching product with ID ${id} from Firestore: `, error);
-        throw error;
+        // Instead of throwing, we return undefined to allow the page to render a 404.
+        return undefined;
     }
 }
