@@ -1,7 +1,6 @@
 "use server";
 
 import { suggestProductTags, type SuggestProductTagsOutput } from '@/ai/flows/suggest-product-tags';
-import { createPrintfulOrder } from '@/lib/printful';
 import { createPayPalOrder, capturePayPalOrder } from '@/lib/paypal';
 import type { CartItem, User } from '@/lib/types';
 
@@ -46,14 +45,15 @@ export async function captureOrderAction(orderID: string, cartItems: CartItem[],
         
         // Check if payment was successful
         if (captureData && captureData.status === 'COMPLETED') {
-            // Create order in Printful
-            const printfulResponse = await createPrintfulOrder(cartItems, captureData, user);
+            // The Printful order creation has been removed.
+            // You can add logic here to save the order to your own database.
+            const mockOrderId = `MOCK-${Date.now()}`;
             
             // Return relevant data to the client
             return {
                 success: true,
-                orderId: printfulResponse.id,
-                trackingNumber: printfulResponse.id, // Using printful id as tracking for now
+                orderId: mockOrderId,
+                trackingNumber: mockOrderId, 
             };
         } else {
             throw new Error('PayPal payment not completed.');

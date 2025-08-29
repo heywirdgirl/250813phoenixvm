@@ -1,20 +1,13 @@
 
 import ProductCard from "@/components/ProductCard";
-import { getStoreProducts } from "@/lib/printful";
+import { products as allProducts } from "@/lib/products";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Terminal } from "lucide-react";
 import type { Product } from "@/lib/types";
 
-export default async function ProductsPage() {
-  let products: Product[] = [];
-  let error: string | null = null;
-
-  try {
-    products = await getStoreProducts();
-  } catch (e: any) {
-    console.error('Failed to fetch products for page:', e);
-    error = e.message || "An unknown error occurred.";
-  }
+export default function ProductsPage() {
+  const products: Product[] = allProducts;
+  const error: string | null = null;
 
   if (error) {
     return (
@@ -38,7 +31,7 @@ export default async function ProductsPage() {
           <Terminal className="h-4 w-4" />
           <AlertTitle>No Products Found</AlertTitle>
           <AlertDescription>
-            It looks like there are no products synced to your Printful store. Please add some products in your Printful dashboard and try again.
+            It looks like there are no products available. Please check back later.
           </AlertDescription>
         </Alert>
       </div>

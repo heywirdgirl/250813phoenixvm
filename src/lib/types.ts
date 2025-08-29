@@ -5,11 +5,11 @@ export interface Variant {
 }
 
 export interface Product {
-  id: string; // Corresponds to Printful's product ID
+  id: string;
   name: string;
   description: string;
   price: number;
-  images: string[]; // Corresponds to Printful's thumbnail_url
+  images: string[];
   variants: Variant[];
 }
 
