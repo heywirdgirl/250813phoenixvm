@@ -9,22 +9,11 @@ export default async function ProductsPage() {
   let products: Product[] = [];
   let error: string | null = null;
 
-  // Kiểm tra xem các biến môi trường Firebase có tồn tại không
-  const firebaseConfigured = 
-    process.env.NEXT_PUBLIC_FIREBASE_API_KEY &&
-    process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN &&
-    process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
-
-  if (!firebaseConfigured) {
-    error = "Firebase environment variables are not configured. Please check your .env file.";
-  } else {
-    try {
-      products = await getProducts();
-    } catch(e: any) {
-      console.error(e);
-      // Cung cấp thông báo lỗi chi tiết hơn
-      error = `Failed to load products. This could be a connection issue or a problem with your Firestore Security Rules. Details: ${e.message}`;
-    }
+  try {
+    products = await getProducts();
+  } catch (e: any) {
+    console.error(e);
+    error = `Failed to load products. This could be a connection issue or a problem with your Firestore Security Rules. Please make sure you have deployed the firestore.rules file. Details: ${e.message}`;
   }
 
   if (error) {

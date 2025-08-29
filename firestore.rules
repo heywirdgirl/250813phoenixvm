@@ -1,0 +1,19 @@
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Allow public read access to products, but restrict writes.
+    // This allows anyone to view your products.
+    match /products/{productId} {
+      allow get, list: if true;
+      allow write: if request.auth != null; // Only authenticated users can write (for future use)
+    }
+
+    // You can add rules for other collections here.
+    // For example, to restrict user data access:
+    // match /users/{userId} {
+    //   allow read, write: if request.auth != null && request.auth.uid == userId;
+    // }
+  }
+}
