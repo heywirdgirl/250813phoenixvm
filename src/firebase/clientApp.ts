@@ -12,22 +12,24 @@ const firebaseConfig: FirebaseOptions = {
     appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-// Function to check if the Firebase config is valid
+// Function to check if the Firebase config is valid for the client
 export const isFirebaseConfigValid = () => {
-    return Object.values(firebaseConfig).every(value => Boolean(value));
+    return !!process.env.NEXT_PUBLIC_FIREBASE_API_KEY &&
+           !!process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN &&
+           !!process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID &&
+           !!process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET &&
+           !!process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID &&
+           !!process.env.NEXT_PUBLIC_FIREBASE_APP_ID;
 };
 
-// Initialize Firebase one time
-const app: FirebaseApp = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+// Initialize Firebase App
+const app: FirebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
+
+// Get Firestore instance
 const db = getFirestore(app);
 
-// Initialize auth only on the client-side
-let auth: Auth;
-if (typeof window !== 'undefined') {
-  // Only initialize auth if config is valid to prevent errors
-  if (isFirebaseConfigValid()) {
-    auth = getAuth(app);
-  }
-}
+// Get Auth instance (conditionally for client-side)
+const auth: Auth = getAuth(app);
+
 
 export { app, db, auth, firebaseConfig };
