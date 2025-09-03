@@ -37,13 +37,16 @@ export async function handleSuggestTags(
 export async function createOrderAction(cartItems: CartItem[]) {
     try {
         const response = await createPayPalOrder(cartItems);
+        // Successful response should have an 'id'
         if (response.id) {
-            return response;
+            return { id: response.id };
         }
-        throw new Error(response.error || "Failed to create order ID.");
-    } catch (error) {
-        console.error("Failed to create PayPal order:", error);
-        return { error: "Could not create PayPal order. Please try again." };
+        // If not, there's an error in the response structure
+        return { error: response.error || "Failed to create PayPal order." };
+    } catch (error: any) {
+        console.error("Server Action: Failed to create PayPal order:", error);
+        // The error object might have a more specific message
+        return { error: error.message || "Could not create PayPal order. Please try again." };
     }
 }
 
@@ -68,7 +71,6 @@ export async function captureOrderAction(orderID: string, cartItems: CartItem[],
                         id: item.product.id,
                         name: item.product.name,
                         price: item.product.price,
-                        // We don't need to store all product details, just what's needed for the order
                         description: '', 
                         images: [],
                         variants: []
@@ -83,7 +85,7 @@ export async function captureOrderAction(orderID: string, cartItems: CartItem[],
 
             // Save the order to Firestore
             const ordersCollectionRef = collection(db, 'orders');
-            const docRef = await addDoc(ordersCollectionRef, newOrder);
+            const docRef = await addDoc(ordersCollectionre, newOrder);
 
             // Return relevant data to the client, including our new Firestore Order ID
             return {
@@ -91,10 +93,13 @@ export async function captureOrderAction(orderID: string, cartItems: CartItem[],
                 orderId: docRef.id, // Use the Firestore document ID as our official order ID
             };
         } else {
-            throw new Error('PayPal payment not completed.');
+            // Handle cases where capture was not completed, e.g. PENDING
+            const message = captureData?.details?.[0]?.description || 'PayPal payment not completed.';
+            console.error('PayPal capture not completed:', captureData);
+            return { error: message };
         }
     } catch (error: any) {
-        console.error("Failed to capture order and save to Firestore:", error);
+        console.error("Server Action: Failed to capture order and save to Firestore:", error);
         return { error: error.message || "Payment could not be processed. Please try again." };
     }
 }

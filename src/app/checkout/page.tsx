@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useCart } from "@/context/CartContext";
@@ -52,6 +53,7 @@ export default function CheckoutPage() {
         }
         throw new Error(response.error || "Failed to create order ID.");
     } catch (err: any) {
+        console.error("Error in createOrderAction:", err);
         setError(err.message);
         return "";
     }
@@ -73,13 +75,14 @@ export default function CheckoutPage() {
             throw new Error(response.error || "Payment failed.");
         }
     } catch (err: any) {
+        console.error("Error in onApprove (calling captureOrderAction):", err);
         setError(err.message);
     }
   };
 
   const onError = (err: any) => {
      setError("An error occurred with the PayPal transaction. Please try again.");
-     console.error("PayPal Error:", err);
+     console.error("PayPal onError callback:", err);
   };
 
 

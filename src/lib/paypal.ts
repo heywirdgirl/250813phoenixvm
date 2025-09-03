@@ -22,6 +22,10 @@ async function generateAccessToken() {
     },
   });
 
+  if (!response.ok) {
+    const errorDetails = await response.text();
+    throw new Error(`Failed to generate PayPal access token: ${errorDetails}`);
+  }
   const data: any = await response.json();
   return data.access_token;
 }
@@ -70,7 +74,6 @@ export async function createPayPalOrder(cartItems: CartItem[]) {
                 currency_code: "USD",
                 value: item.product.price.toFixed(2),
             },
-            // category: 'PHYSICAL_GOODS' // Recommended for physical products
         }))
       },
     ],
@@ -108,15 +111,28 @@ export async function capturePayPalOrder(orderID: string) {
 }
 
 async function handleResponse(response: any) {
-  try {
+  if (response.status === 200 || response.status === 201) {
     const jsonResponse = await response.json();
     return {
       jsonResponse,
       httpStatusCode: response.status,
       ...jsonResponse
     };
-  } catch (err) {
-    const errorMessage = await response.text();
-    throw new Error(errorMessage);
   }
+
+  const errorMessage = await response.text();
+  let errorDetails;
+  try {
+      errorDetails = JSON.parse(errorMessage);
+  } catch(e) {
+      errorDetails = null;
+  }
+  
+  // Try to extract a more specific error message from PayPal's response
+  const specificMessage = errorDetails?.details?.[0]?.description || errorDetails?.message || errorMessage;
+  
+  const error = new Error(specificMessage);
+  console.error("PayPal API Error:", JSON.stringify(errorDetails, null, 2));
+
+  throw error;
 }
