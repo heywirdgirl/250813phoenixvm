@@ -3,13 +3,13 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Bất kỳ ai cũng có thể đọc sản phẩm
+    // Anyone can read products
     match /products/{productId} {
       allow read: if true;
     }
 
-    // Người dùng đã đăng nhập có thể tạo đơn hàng cho chính họ
-    // và chỉ có thể đọc các đơn hàng của chính mình.
+    // Authenticated users can create orders for themselves,
+    // and can only read their own orders.
     match /orders/{orderId} {
       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
       allow read: if request.auth != null && resource.data.userId == request.auth.uid;
