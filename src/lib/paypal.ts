@@ -1,3 +1,4 @@
+
 import type { CartItem } from './types';
 import fetch from 'node-fetch';
 
@@ -33,8 +34,16 @@ export async function createPayPalOrder(cartItems: CartItem[]) {
   const accessToken = await generateAccessToken();
   const url = `${base}/v2/checkout/orders`;
 
-  const totalValue = cartItems.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+  // Calculate item_total by summing up the price of each item * quantity
+  const itemTotalValue = cartItems.reduce((sum, item) => {
+    return sum + item.product.price * item.quantity;
+  }, 0);
+
   const shippingCost = 5.00;
+
+  // Calculate grandTotal from the already calculated itemTotal and shipping
+  // This avoids floating point inaccuracies.
+  const grandTotal = itemTotalValue + shippingCost;
   
   const payload = {
     intent: "CAPTURE",
@@ -42,11 +51,11 @@ export async function createPayPalOrder(cartItems: CartItem[]) {
       {
         amount: {
           currency_code: "USD",
-          value: (totalValue + shippingCost).toFixed(2),
+          value: grandTotal.toFixed(2), // Use the consistent grand total
           breakdown: {
               item_total: {
                   currency_code: "USD",
-                  value: totalValue.toFixed(2),
+                  value: itemTotalValue.toFixed(2),
               },
               shipping: {
                   currency_code: "USD",
@@ -61,8 +70,7 @@ export async function createPayPalOrder(cartItems: CartItem[]) {
                 currency_code: "USD",
                 value: item.product.price.toFixed(2),
             },
-            // You might need a SKU for Printful items
-            // sku: item.product.id 
+            // category: 'PHYSICAL_GOODS' // Recommended for physical products
         }))
       },
     ],
