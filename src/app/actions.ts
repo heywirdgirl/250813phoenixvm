@@ -27,7 +27,7 @@ export async function handleSuggestTags(
   try {
     const result: SuggestProductTagsOutput = await suggestProductTags({ productDescription });
     return { tags: result.tags, description: productDescription };
-  } catch (e) {
+  } catch (e: any) {
     console.error(e);
     return { error: 'Failed to suggest tags. Please try again later.', description: productDescription };
   }
@@ -42,9 +42,11 @@ export async function createOrderAction(cartItems: CartItem[]) {
             return { id: response.id };
         }
         // If not, there's an error in the response structure
-        return { error: response.error || "Failed to create PayPal order." };
+        const errorMessage = response.error || "Failed to create PayPal order.";
+        console.error("Server Action Error (createOrderAction):", response);
+        return { error: errorMessage };
     } catch (error: any) {
-        console.error("Server Action: Failed to create PayPal order:", error);
+        console.error("Server Action Exception (createOrderAction):", error);
         // The error object might have a more specific message
         return { error: error.message || "Could not create PayPal order. Please try again." };
     }
@@ -85,7 +87,7 @@ export async function captureOrderAction(orderID: string, cartItems: CartItem[],
 
             // Save the order to Firestore
             const ordersCollectionRef = collection(db, 'orders');
-            const docRef = await addDoc(ordersCollectionre, newOrder);
+            const docRef = await addDoc(ordersCollectionRef, newOrder);
 
             // Return relevant data to the client, including our new Firestore Order ID
             return {
@@ -99,7 +101,7 @@ export async function captureOrderAction(orderID: string, cartItems: CartItem[],
             return { error: message };
         }
     } catch (error: any) {
-        console.error("Server Action: Failed to capture order and save to Firestore:", error);
+        console.error("Server Action Exception (captureOrderAction): Failed to capture order and save to Firestore:", error);
         return { error: error.message || "Payment could not be processed. Please try again." };
     }
 }
