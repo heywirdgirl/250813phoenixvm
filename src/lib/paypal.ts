@@ -10,7 +10,7 @@ const base = PAYPAL_API_ENVIRONMENT === 'SANDBOX' ? 'https://api-m.sandbox.paypa
  */
 async function generateAccessToken() {
   if (!PAYPAL_CLIENT_ID || !PAYPAL_CLIENT_SECRET) {
-    throw new Error("MISSING_API_CREDENTIALS");
+    throw new Error("MISSING_API_CREDENTIALS: Your PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET must be set in the .env file.");
   }
   const auth = Buffer.from(`${PAYPAL_CLIENT_ID}:${PAYPAL_CLIENT_SECRET}`).toString("base64");
   const response = await fetch(`${base}/v1/oauth2/token`, {
