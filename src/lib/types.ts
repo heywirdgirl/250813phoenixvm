@@ -1,3 +1,6 @@
+
+import type { FieldValue } from "firebase/firestore";
+
 export interface Variant {
   id: string;
   type: 'Color' | 'Size';
@@ -24,11 +27,16 @@ export interface CartItem {
 }
 
 export interface Order {
-  id: string;
+  id: string; // Firestore document ID
+  userId: string;
+  userEmail: string | null;
+  userName: string | null;
   items: CartItem[];
-  total: number;
-  createdAt: Date;
-  status: 'Pending' | 'Shipped' | 'Delivered';
+  totalAmount: number;
+  paypalOrderId: string;
+  paypalTransactionId: string;
+  createdAt: FieldValue; // Use FieldValue for serverTimestamp
+  status: 'Pending' | 'Processing' | 'Shipped' | 'Delivered' | 'Cancelled';
 }
 
 export interface User {

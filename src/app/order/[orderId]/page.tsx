@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -11,7 +12,8 @@ interface OrderConfirmationPageProps {
 }
 
 export default function OrderConfirmationPage({ params }: OrderConfirmationPageProps) {
-    const trackingNumber = `PB${params.orderId.toUpperCase()}`;
+    // The tracking number logic is removed as it's now part of the backend processing.
+    // The orderId is now the Firestore document ID.
 
     return (
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16">
@@ -32,12 +34,8 @@ export default function OrderConfirmationPage({ params }: OrderConfirmationPageP
                              <span className="font-mono text-primary">{params.orderId}</span>
                            </div>
                            <div className="flex justify-between">
-                             <span className="font-semibold">Tracking Number:</span>
-                             <span className="font-mono text-primary">{trackingNumber}</span>
-                           </div>
-                           <div className="flex justify-between">
                              <span className="font-semibold">Order Status:</span>
-                             <span>Printing</span>
+                             <span>Pending</span>
                            </div>
                         </div>
                          <Button asChild className="w-full">
