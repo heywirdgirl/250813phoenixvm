@@ -42,7 +42,7 @@ export default function ProfilePage() {
               
               let createdAtString = 'Date not available';
               // Check if createdAt is a valid Firestore Timestamp object
-              if (data.createdAt && typeof (data.createdAt as any).toMillis === 'function') {
+              if (data.createdAt && typeof (data.createdAt as any)?.toMillis === 'function') {
                   const timestamp = data.createdAt as Timestamp;
                   createdAtString = new Date(timestamp.toMillis()).toLocaleDateString();
               } else if (data.createdAt) {
@@ -149,7 +149,7 @@ export default function ProfilePage() {
                         <TableCell className="text-right">${order.totalAmount.toFixed(2)}</TableCell>
                       </TableRow>
                     ))}
-                  </Body>
+                  </TableBody>
                 </Table>
               ) : (
                 <div className="text-center py-12 text-muted-foreground">
