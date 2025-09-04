@@ -52,7 +52,7 @@ export default function MyOrdersPage() {
           const q = query(ordersRef, where("userId", "==", user.uid));
           const querySnapshot = await getDocs(q);
           
-          const userOrders = querySnapshot.docs.map(doc => {
+          let userOrders = querySnapshot.docs.map(doc => {
               const data = doc.data() as Order;
               
               let createdAtString = 'Date not available';
@@ -84,6 +84,7 @@ export default function MyOrdersPage() {
               } as EnrichedOrder;
           });
           
+          // Sort orders on the client-side
           userOrders.sort((a, b) => b.createdAtTimestamp - a.createdAtTimestamp);
 
           setOrders(userOrders);
