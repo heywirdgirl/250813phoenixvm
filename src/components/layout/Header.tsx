@@ -1,7 +1,8 @@
+
 "use client";
 
 import Link from "next/link";
-import { LogOut, ShoppingCart, User as UserIcon } from "lucide-react";
+import { LogOut, ShoppingCart, User as UserIcon, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/context/CartContext";
 import { Badge } from "../ui/badge";
@@ -89,6 +90,12 @@ export default function Header() {
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
+                   <DropdownMenuItem asChild>
+                    <Link href="/my-orders">
+                        <Package className="mr-2 h-4 w-4" />
+                        <span>My Orders</span>
+                    </Link>
+                  </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <Link href="/profile">
                         <UserIcon className="mr-2 h-4 w-4" />
