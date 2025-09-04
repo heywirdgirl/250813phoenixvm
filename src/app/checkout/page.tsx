@@ -83,14 +83,17 @@ export default function CheckoutPage() {
                     userEmail: user.email,
                     userName: user.displayName,
                     items: cartItems.map(item => ({
-                        ...item,
+                        id: item.id,
+                        quantity: item.quantity,
+                        variant: item.variant,
+                        // Flatten product data to avoid complex nested objects in Firestore
                         product: {
                             id: item.product.id,
                             name: item.product.name,
                             price: item.product.price,
-                            description: '', 
-                            images: [],
-                            variants: []
+                            images: item.product.images,
+                            description: item.product.description, // Keep description if needed for records
+                            variants: [], // Avoid saving complex variants array here
                         }
                     })),
                     totalAmount: grandTotal,
