@@ -1,26 +1,30 @@
+
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Bất kỳ ai cũng có thể đọc sản phẩm
+    // Anyone can read products
     match /products/{productId} {
       allow read: if true;
-      allow write: if false;
+      allow write: if false; // Protect your product data from client-side writes
     }
-    
+
     match /syncHistory/{logId} {
       allow read: if true;
       allow write: if false;
     }
 
-    // Người dùng đã đăng nhập có thể tạo đơn hàng cho chính họ
-    // và chỉ đọc đơn hàng của chính mình
+    // Logged-in users can create orders (via secure server action).
+    // Users can only read their own orders.
     match /orders/{orderId} {
-      allow create: if request.auth != null
-                    && request.resource.data.userId == request.auth.uid;
-      allow read: if request.auth != null 
-                  && resource.data.userId == request.auth.uid;
+      // Allow create only from authenticated requests. The server action will be authenticated.
+      allow create: if request.auth != null;
+      
+      // Users can only read orders where their UID matches the document's userId.
+      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+
+      // Do not allow clients to update or delete orders.
       allow update, delete: if false; 
     }
   }

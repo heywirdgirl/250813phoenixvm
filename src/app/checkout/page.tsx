@@ -5,17 +5,14 @@ import { useCart } from "@/context/CartContext";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 import Image from "next/image";
 import { useAuth } from "@/context/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PayPalScriptProvider, PayPalButtons, type CreateOrderData, type OnApproveData } from "@paypal/react-paypal-js";
-import { createOrderAction, captureOrderAction } from "@/app/actions";
+import { createOrderAction, captureOrderAndSaveToFirestore } from "@/app/actions";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Terminal } from "lucide-react";
-import { db } from "@/firebase/clientApp";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
-import type { Order } from "@/lib/types";
 
 
 export default function CheckoutPage() {
@@ -23,6 +20,7 @@ export default function CheckoutPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
     if (!loading && !user) {
@@ -70,58 +68,27 @@ export default function CheckoutPage() {
         setError("You must be logged in to complete the purchase.");
         return;
     }
-    try {
-        const response = await captureOrderAction(data.orderID);
-        if (response.success && response.captureData) {
-            const captureData = response.captureData;
-            // Now, save the order to Firestore from the client-side
-            try {
-                const grandTotal = cartItems.reduce((total, item) => total + item.product.price * item.quantity, 0) + shippingCost;
-                
-                const newOrder: Omit<Order, 'id'> = {
-                    userId: user.uid,
-                    userEmail: user.email,
-                    userName: user.displayName,
-                    items: cartItems.map(item => ({
-                        id: item.id,
-                        quantity: item.quantity,
-                        variant: item.variant,
-                        // Flatten product data to avoid complex nested objects in Firestore
-                        product: {
-                            id: item.product.id,
-                            name: item.product.name,
-                            price: item.product.price,
-                            images: item.product.images,
-                            description: item.product.description, // Keep description if needed for records
-                            variants: [], // Avoid saving complex variants array here
-                        }
-                    })),
-                    totalAmount: grandTotal,
-                    paypalOrderId: data.orderID,
-                    paypalTransactionId: captureData.purchase_units[0]?.payments?.captures[0]?.id || 'N/A',
-                    status: 'Pending',
-                    createdAt: serverTimestamp(),
-                };
 
-                const ordersCollectionRef = collection(db, 'orders');
-                const docRef = await addDoc(ordersCollectionRef, newOrder);
-                
-                sessionStorage.setItem('order_complete', 'true');
-                clearCart();
-                router.push(`/order/${docRef.id}`);
+    startTransition(async () => {
+        const response = await captureOrderAndSaveToFirestore({
+            orderID: data.orderID,
+            cartItems: cartItems,
+            user: {
+                uid: user.uid,
+                email: user.email,
+                displayName: user.displayName
+            },
+            shippingCost: shippingCost,
+        });
 
-            } catch (firestoreError: any) {
-                 console.error("Error saving order to Firestore:", firestoreError);
-                 const transactionId = captureData.purchase_units[0]?.payments?.captures[0]?.id || 'N/A';
-                 setError(`Payment was successful, but we failed to save your order. Please contact support with transaction ID ${transactionId}. Error: ${firestoreError.message}`);
-            }
+        if (response.success && response.firestoreOrderId) {
+            sessionStorage.setItem('order_complete', 'true');
+            clearCart();
+            router.push(`/order/${response.firestoreOrderId}`);
         } else {
-            throw new Error(response.error || "Payment failed.");
+            setError(response.error || "An unknown error occurred while saving your order.");
         }
-    } catch (err: any) {
-        console.error("Error in onApprove (calling captureOrderAction):", err);
-        setError(err.message);
-    }
+    });
   };
 
   const onError = (err: any) => {
@@ -224,12 +191,19 @@ export default function CheckoutPage() {
                 )}
             </CardContent>
             <CardFooter className="flex flex-col gap-4">
-                <PayPalButtons
-                    style={{ layout: "vertical", color: "blue" }}
-                    createOrder={createOrder}
-                    onApprove={onApprove}
-                    onError={onError}
-                />
+                {isPending ? (
+                    <div className="flex items-center justify-center w-full h-12">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                        <p className="ml-4 text-muted-foreground">Processing your order...</p>
+                    </div>
+                ) : (
+                    <PayPalButtons
+                        style={{ layout: "vertical", color: "blue" }}
+                        createOrder={createOrder}
+                        onApprove={onApprove}
+                        onError={onError}
+                    />
+                )}
             </CardFooter>
             </Card>
         </div>
