@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface EnrichedOrder extends Omit<Order, 'createdAt'> {
+  id: string; // Ensure id is part of the type
   createdAt: string; 
 }
 
@@ -41,14 +42,11 @@ export default function ProfilePage() {
               const data = doc.data() as Order;
               
               let createdAtString = 'Date not available';
-              // Check if createdAt is a valid Firestore Timestamp object
-              if (data.createdAt && typeof (data.createdAt as any)?.toMillis === 'function') {
+              if (data.createdAt && typeof (data.createdAt as any)?.toDate === 'function') {
                   const timestamp = data.createdAt as Timestamp;
-                  createdAtString = new Date(timestamp.toMillis()).toLocaleDateString();
+                  createdAtString = timestamp.toDate().toLocaleDateString();
               } else if (data.createdAt) {
-                  // Handle cases where it might be a different format, or provide a fallback.
-                  // This part is defensive programming.
-                  console.warn("Order has an invalid 'createdAt' field:", data);
+                  console.warn("Order has a 'createdAt' field that is not a Timestamp:", data);
                   createdAtString = 'Pending date...';
               }
               
