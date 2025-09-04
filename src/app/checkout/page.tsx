@@ -13,6 +13,9 @@ import { PayPalScriptProvider, PayPalButtons, type CreateOrderData, type OnAppro
 import { createOrderAction, captureOrderAction } from "@/app/actions";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Terminal } from "lucide-react";
+import { db } from "@/firebase/clientApp";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import type { Order } from "@/lib/types";
 
 
 export default function CheckoutPage() {
@@ -66,11 +69,46 @@ export default function CheckoutPage() {
         return;
     }
     try {
-        const response = await captureOrderAction(data.orderID, cartItems, user);
-        if (response.success) {
-            sessionStorage.setItem('order_complete', 'true');
-            clearCart();
-            router.push(`/order/${response.orderId}`);
+        const response = await captureOrderAction(data.orderID);
+        if (response.success && response.captureData) {
+            const captureData = response.captureData;
+            // Now, save the order to Firestore from the client-side
+            try {
+                const grandTotal = cartItems.reduce((total, item) => total + item.product.price * item.quantity, 0) + shippingCost;
+                
+                const newOrder: Omit<Order, 'id'> = {
+                    userId: user.uid,
+                    userEmail: user.email,
+                    userName: user.displayName,
+                    items: cartItems.map(item => ({
+                        ...item,
+                        product: {
+                            id: item.product.id,
+                            name: item.product.name,
+                            price: item.product.price,
+                            description: '', 
+                            images: [],
+                            variants: []
+                        }
+                    })),
+                    totalAmount: grandTotal,
+                    paypalOrderId: data.orderID,
+                    paypalTransactionId: captureData.purchase_units[0]?.payments?.captures[0]?.id || 'N/A',
+                    status: 'Pending',
+                    createdAt: serverTimestamp(),
+                };
+
+                const ordersCollectionRef = collection(db, 'orders');
+                const docRef = await addDoc(ordersCollectionRef, newOrder);
+                
+                sessionStorage.setItem('order_complete', 'true');
+                clearCart();
+                router.push(`/order/${docRef.id}`);
+
+            } catch (firestoreError: any) {
+                 console.error("Error saving order to Firestore:", firestoreError);
+                 setError(`Payment was successful, but we failed to save your order. Please contact support with transaction ID ${captureData.id}. Error: ${firestoreError.message}`);
+            }
         } else {
             throw new Error(response.error || "Payment failed.");
         }

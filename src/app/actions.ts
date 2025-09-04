@@ -3,9 +3,7 @@
 
 import { suggestProductTags, type SuggestProductTagsOutput } from '@/ai/flows/suggest-product-tags';
 import { createPayPalOrder, capturePayPalOrder } from '@/lib/paypal';
-import type { CartItem, User, Order } from '@/lib/types';
-import { db } from '@/firebase/clientApp';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import type { CartItem } from '@/lib/types';
 
 
 export interface SuggestTagsState {
@@ -42,7 +40,7 @@ export async function createOrderAction(cartItems: CartItem[]) {
             return { id: response.id };
         }
         // If not, there's an error in the response structure
-        const errorMessage = response.error || "Failed to create PayPal order.";
+        const errorMessage = (response as any).error || "Failed to create PayPal order.";
         console.error("Server Action Error (createOrderAction):", response);
         return { error: errorMessage };
     } catch (error: any) {
@@ -52,56 +50,24 @@ export async function createOrderAction(cartItems: CartItem[]) {
     }
 }
 
-export async function captureOrderAction(orderID: string, cartItems: CartItem[], user: User) {
+export async function captureOrderAction(orderID: string) {
     try {
         const captureData = await capturePayPalOrder(orderID);
         
         // Check if payment was successful
         if (captureData && captureData.status === 'COMPLETED') {
-            const shippingCost = 5.00;
-            const cartTotal = cartItems.reduce((total, item) => total + item.product.price * item.quantity, 0);
-            const grandTotal = cartTotal + shippingCost;
-            
-            // This is the order data that will be saved to Firestore.
-            const newOrder: Omit<Order, 'id'> = {
-                userId: user.uid,
-                userEmail: user.email,
-                userName: user.displayName,
-                items: cartItems.map(item => ({
-                    ...item,
-                    product: {
-                        id: item.product.id,
-                        name: item.product.name,
-                        price: item.product.price,
-                        description: '', 
-                        images: [],
-                        variants: []
-                    }
-                })),
-                totalAmount: grandTotal,
-                paypalOrderId: orderID,
-                paypalTransactionId: captureData.purchase_units[0]?.payments?.captures[0]?.id || 'N/A',
-                status: 'Pending', // Initial status, to be processed by a backend service
-                createdAt: serverTimestamp(),
-            };
-
-            // Save the order to Firestore
-            const ordersCollectionRef = collection(db, 'orders');
-            const docRef = await addDoc(ordersCollectionRef, newOrder);
-
-            // Return relevant data to the client, including our new Firestore Order ID
-            return {
+             return {
                 success: true,
-                orderId: docRef.id, // Use the Firestore document ID as our official order ID
+                captureData: captureData,
             };
         } else {
             // Handle cases where capture was not completed, e.g. PENDING
-            const message = captureData?.details?.[0]?.description || 'PayPal payment not completed.';
+            const message = (captureData as any)?.details?.[0]?.description || 'PayPal payment not completed.';
             console.error('PayPal capture not completed:', captureData);
             return { error: message };
         }
     } catch (error: any) {
-        console.error("Server Action Exception (captureOrderAction): Failed to capture order and save to Firestore:", error);
+        console.error("Server Action Exception (captureOrderAction): Failed to capture order.", error);
         return { error: error.message || "Payment could not be processed. Please try again." };
     }
 }

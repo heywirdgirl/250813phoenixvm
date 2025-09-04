@@ -3,16 +3,24 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Anyone can read products
+    // Bất kỳ ai cũng có thể đọc sản phẩm
     match /products/{productId} {
       allow read: if true;
+      allow write: if false;
+    }
+    
+    match /syncHistory/{logId} {
+      allow read: if true;
+      allow write: if false;
     }
 
-    // Authenticated users can create orders for themselves,
-    // and can only read their own orders.
+    // Người dùng đã đăng nhập có thể tạo đơn hàng cho chính họ
+    // và chỉ đọc đơn hàng của chính mình
     match /orders/{orderId} {
-      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
-      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null
+                    && request.resource.data.userId == request.auth.uid;
+      allow read: if request.auth != null 
+                  && resource.data.userId == request.auth.uid;
       allow update, delete: if false; 
     }
   }
