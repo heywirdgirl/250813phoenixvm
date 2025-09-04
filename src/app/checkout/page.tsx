@@ -54,7 +54,9 @@ export default function CheckoutPage() {
         if (response.id) {
             return response.id;
         }
-        throw new Error(response.error || "Failed to create order ID.");
+        const errorMessage = (response as any).error || "Failed to create order ID.";
+        console.error("Server Action Error (createOrder):", response);
+        throw new Error(errorMessage);
     } catch (err: any) {
         console.error("Error in createOrderAction:", err);
         setError(err.message);
@@ -107,7 +109,8 @@ export default function CheckoutPage() {
 
             } catch (firestoreError: any) {
                  console.error("Error saving order to Firestore:", firestoreError);
-                 setError(`Payment was successful, but we failed to save your order. Please contact support with transaction ID ${captureData.id}. Error: ${firestoreError.message}`);
+                 const transactionId = captureData.purchase_units[0]?.payments?.captures[0]?.id || 'N/A';
+                 setError(`Payment was successful, but we failed to save your order. Please contact support with transaction ID ${transactionId}. Error: ${firestoreError.message}`);
             }
         } else {
             throw new Error(response.error || "Payment failed.");
@@ -223,6 +226,7 @@ export default function CheckoutPage() {
                     createOrder={createOrder}
                     onApprove={onApprove}
                     onError={onError}
+                    disabled={isPending}
                 />
             </CardFooter>
             </Card>
