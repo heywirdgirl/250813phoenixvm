@@ -12,19 +12,18 @@ service cloud.firestore {
       allow write: if false; // Only server can write
     }
 
-    // Rules for the new 'orders' collection
+    // Rules for the 'orders' collection
     match /orders/{orderId} {
       // Allow authenticated users to create new orders.
-      // They cannot set the status, printfulOrderId, or createdAt fields.
-      // The server will handle these fields securely.
+      // They can only set createdAt to the server timestamp.
+      // They cannot set status or printfulOrderId.
       allow create: if request.auth != null
-                    && request.resource.data.userId == request.auth.uid
+                    && request.resource.data.createdAt == request.time
                     && !("status" in request.resource.data)
-                    && !("printfulOrderId" in request.resource.data)
-                    && !("createdAt" in request.resource.data);
+                    && !("printfulOrderId" in request.resource.data);
       
-      // Allow authenticated user who created the order to read it.
-      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+      // Allow the user who created the order to read it.
+      allow read: if request.auth != null && request.auth.uid == resource.data.userId; 
 
       // Do not allow clients to update or delete orders.
       // This must be handled by the server (Admin SDK).

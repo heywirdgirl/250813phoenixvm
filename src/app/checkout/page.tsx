@@ -14,7 +14,7 @@ import { createOrderAction, captureOrderAction } from "@/app/actions";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Terminal } from "lucide-react";
 import { db } from "@/firebase/clientApp";
-import { collection, addDoc } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import type { Order } from "@/lib/types";
 
 
@@ -83,8 +83,7 @@ export default function CheckoutPage() {
         // Step 2: If capture is successful, save the order to Firestore from the client
         try {
             // Create a new order object that complies with the new Firestore rules
-            // We are NOT setting `status` or `createdAt` from the client.
-            const newOrder: Omit<Order, 'id' | 'status' | 'createdAt'> = {
+            const newOrder: Omit<Order, 'id'> = {
                 userId: user.uid,
                 userEmail: user.email,
                 userName: user.displayName,
@@ -97,13 +96,14 @@ export default function CheckoutPage() {
                         name: item.product.name,
                         price: item.product.price,
                         images: [item.product.images[0]],
-                        description: item.product.description,
-                        variants: []
+                        description: '', // Don't need full description
+                        variants: [] // Don't need all variants
                     }
                 })),
                 totalAmount: grandTotal,
                 paypalOrderId: data.orderID,
                 paypalTransactionId: captureResponse.transactionId,
+                createdAt: serverTimestamp(), // Let Firestore set the timestamp on the server
             };
 
             const ordersCollectionRef = collection(db, 'orders');
@@ -116,9 +116,7 @@ export default function CheckoutPage() {
 
         } catch (firestoreError: any) {
              console.error("Firestore save error:", firestoreError);
-             const userMessage = firestoreError.code === 'permission-denied'
-                ? `There was a problem saving your order. ${firestoreError.message}.`
-                : `We failed to save your order details. Please contact support with transaction ID ${captureResponse.transactionId}.`;
+             const userMessage = `We failed to save your order details. Please contact support with transaction ID ${captureResponse.transactionId}. Error: ${firestoreError.message}`;
 
              setError(`Payment was successful, but ${userMessage}`);
         }
