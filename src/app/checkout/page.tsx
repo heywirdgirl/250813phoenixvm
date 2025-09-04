@@ -10,9 +10,12 @@ import Image from "next/image";
 import { useAuth } from "@/context/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PayPalScriptProvider, PayPalButtons, type CreateOrderData, type OnApproveData } from "@paypal/react-paypal-js";
-import { createOrderAction, captureOrderAndSaveToFirestore } from "@/app/actions";
+import { createOrderAction, captureOrderAction } from "@/app/actions";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Terminal } from "lucide-react";
+import { db } from "@/firebase/clientApp";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import type { Order } from "@/lib/types";
 
 
 export default function CheckoutPage() {
@@ -29,7 +32,6 @@ export default function CheckoutPage() {
   }, [user, loading, router]);
 
   useEffect(() => {
-    // Only redirect if the cart is truly empty and not just being cleared post-order
     if (!loading && cartItems.length === 0) {
       const isOrderComplete = sessionStorage.getItem('order_complete');
       if (!isOrderComplete) {
@@ -70,23 +72,55 @@ export default function CheckoutPage() {
     }
 
     startTransition(async () => {
-        const response = await captureOrderAndSaveToFirestore({
-            orderID: data.orderID,
-            cartItems: cartItems,
-            user: {
-                uid: user.uid,
-                email: user.email,
-                displayName: user.displayName
-            },
-            shippingCost: shippingCost,
-        });
+        // Step 1: Capture the payment via Server Action
+        const captureResponse = await captureOrderAction(data.orderID);
 
-        if (response.success && response.firestoreOrderId) {
+        if (!captureResponse.success) {
+            setError(captureResponse.error || "An unknown error occurred while capturing your payment.");
+            return;
+        }
+
+        // Step 2: If capture is successful, save the order to Firestore from the client
+        try {
+            const newOrder: Omit<Order, 'id'> = {
+                userId: user.uid,
+                userEmail: user.email,
+                userName: user.displayName,
+                items: cartItems.map(item => ({
+                    id: item.id,
+                    quantity: item.quantity,
+                    variant: item.variant,
+                    product: {
+                        id: item.product.id,
+                        name: item.product.name,
+                        price: item.product.price,
+                        images: [item.product.images[0]], // Only store the first image
+                        description: item.product.description, // Keep description for records
+                        variants: [] // Do not store all product variants in the order
+                    }
+                })),
+                totalAmount: grandTotal,
+                paypalOrderId: data.orderID,
+                paypalTransactionId: captureResponse.transactionId,
+                status: 'Pending',
+                createdAt: serverTimestamp(),
+            };
+
+            const ordersCollectionRef = collection(db, 'orders');
+            const docRef = await addDoc(ordersCollectionRef, newOrder);
+
+            // Step 3: Redirect on successful save
             sessionStorage.setItem('order_complete', 'true');
             clearCart();
-            router.push(`/order/${response.firestoreOrderId}`);
-        } else {
-            setError(response.error || "An unknown error occurred while saving your order.");
+            router.push(`/order/${docRef.id}`);
+
+        } catch (firestoreError: any) {
+             console.error("Firestore save error:", firestoreError);
+             const userMessage = firestoreError.code === 'permission-denied'
+                ? `There was a problem saving your order due to a permissions issue. Please contact support.`
+                : `We failed to save your order details. Please contact support with transaction ID ${captureResponse.transactionId}.`;
+
+             setError(`Payment was successful, but ${userMessage}`);
         }
     });
   };
