@@ -41,9 +41,15 @@ export default function ProfilePage() {
               const data = doc.data() as Order;
               
               let createdAtString = 'Date not available';
-              if (data.createdAt && typeof data.createdAt === 'object' && 'seconds' in data.createdAt) {
+              // Check if createdAt is a valid Firestore Timestamp object
+              if (data.createdAt && typeof (data.createdAt as any).toMillis === 'function') {
                   const timestamp = data.createdAt as Timestamp;
                   createdAtString = new Date(timestamp.toMillis()).toLocaleDateString();
+              } else if (data.createdAt) {
+                  // Handle cases where it might be a different format, or provide a fallback.
+                  // This part is defensive programming.
+                  console.warn("Order has an invalid 'createdAt' field:", data);
+                  createdAtString = 'Pending date...';
               }
               
               return {
@@ -143,7 +149,7 @@ export default function ProfilePage() {
                         <TableCell className="text-right">${order.totalAmount.toFixed(2)}</TableCell>
                       </TableRow>
                     ))}
-                  </TableBody>
+                  </Body>
                 </Table>
               ) : (
                 <div className="text-center py-12 text-muted-foreground">
