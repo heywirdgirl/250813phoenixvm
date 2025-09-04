@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { db } from "@/firebase/clientApp";
-import { collection, query, where, getDocs, orderBy, Timestamp } from "firebase/firestore";
+import { collection, query, where, getDocs, Timestamp } from "firebase/firestore";
 import type { Order } from "@/lib/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -13,8 +13,9 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface EnrichedOrder extends Omit<Order, 'createdAt'> {
-  id: string; // Ensure id is part of the type
+  id: string; 
   createdAt: string; 
+  createdAtTimestamp: number;
 }
 
 
@@ -36,15 +37,18 @@ export default function ProfilePage() {
         setLoadingOrders(true);
         try {
           const ordersRef = collection(db, "orders");
-          const q = query(ordersRef, where("userId", "==", user.uid), orderBy("createdAt", "desc"));
+          // Remove orderBy from query to avoid needing a composite index
+          const q = query(ordersRef, where("userId", "==", user.uid));
           const querySnapshot = await getDocs(q);
           const userOrders = querySnapshot.docs.map(doc => {
               const data = doc.data() as Order;
               
               let createdAtString = 'Date not available';
+              let createdAtTimestamp = 0;
               if (data.createdAt && typeof (data.createdAt as any)?.toDate === 'function') {
                   const timestamp = data.createdAt as Timestamp;
                   createdAtString = timestamp.toDate().toLocaleDateString();
+                  createdAtTimestamp = timestamp.toMillis();
               } else if (data.createdAt) {
                   console.warn("Order has a 'createdAt' field that is not a Timestamp:", data);
                   createdAtString = 'Pending date...';
@@ -54,8 +58,13 @@ export default function ProfilePage() {
                 ...data,
                 id: doc.id,
                 createdAt: createdAtString,
+                createdAtTimestamp: createdAtTimestamp,
               } as EnrichedOrder;
           });
+          
+          // Sort orders on the client-side
+          userOrders.sort((a, b) => b.createdAtTimestamp - a.createdAtTimestamp);
+
           setOrders(userOrders);
         } catch (error) {
           console.error("Error fetching orders:", error);
