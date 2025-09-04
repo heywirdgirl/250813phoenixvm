@@ -1,5 +1,5 @@
 
-import type { FieldValue } from "firebase/firestore";
+import type { FieldValue, Timestamp } from "firebase/firestore";
 
 export interface Variant {
   id: string;
@@ -35,8 +35,8 @@ export interface Order {
   totalAmount: number;
   paypalOrderId: string;
   paypalTransactionId: string;
-  createdAt: FieldValue; // Use FieldValue for serverTimestamp
-  status: 'Pending' | 'Processing' | 'Shipped' | 'Delivered' | 'Cancelled';
+  createdAt?: FieldValue | Timestamp; // Optional on create, present on read
+  status?: 'Pending' | 'Processing' | 'Shipped' | 'Delivered' | 'Cancelled'; // Optional on create
   printfulOrderId?: number;
   printfulOrderStatus?: string;
   recipient?: Recipient;

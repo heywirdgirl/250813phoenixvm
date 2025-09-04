@@ -14,7 +14,7 @@ import { createOrderAction, captureOrderAction } from "@/app/actions";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Terminal } from "lucide-react";
 import { db } from "@/firebase/clientApp";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { collection, addDoc } from "firebase/firestore";
 import type { Order } from "@/lib/types";
 
 
@@ -82,7 +82,9 @@ export default function CheckoutPage() {
 
         // Step 2: If capture is successful, save the order to Firestore from the client
         try {
-            const newOrder: Omit<Order, 'id'> = {
+            // Create a new order object that complies with the new Firestore rules
+            // We are NOT setting `status` or `createdAt` from the client.
+            const newOrder: Omit<Order, 'id' | 'status' | 'createdAt'> = {
                 userId: user.uid,
                 userEmail: user.email,
                 userName: user.displayName,
@@ -94,16 +96,14 @@ export default function CheckoutPage() {
                         id: item.product.id,
                         name: item.product.name,
                         price: item.product.price,
-                        images: [item.product.images[0]], // Only store the first image
-                        description: item.product.description, // Keep description for records
-                        variants: [] // Do not store all product variants in the order
+                        images: [item.product.images[0]],
+                        description: item.product.description,
+                        variants: []
                     }
                 })),
                 totalAmount: grandTotal,
                 paypalOrderId: data.orderID,
                 paypalTransactionId: captureResponse.transactionId,
-                status: 'Pending',
-                createdAt: serverTimestamp(),
             };
 
             const ordersCollectionRef = collection(db, 'orders');
@@ -117,7 +117,7 @@ export default function CheckoutPage() {
         } catch (firestoreError: any) {
              console.error("Firestore save error:", firestoreError);
              const userMessage = firestoreError.code === 'permission-denied'
-                ? `There was a problem saving your order due to a permissions issue. Please contact support.`
+                ? `There was a problem saving your order. ${firestoreError.message}.`
                 : `We failed to save your order details. Please contact support with transaction ID ${captureResponse.transactionId}.`;
 
              setError(`Payment was successful, but ${userMessage}`);

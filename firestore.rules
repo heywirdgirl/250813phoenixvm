@@ -1,31 +1,34 @@
-
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Anyone can read products
+    // Allow public read for products and sync history
     match /products/{productId} {
       allow read: if true;
-      allow write: if false; // Protect your product data from client-side writes
+      allow write: if false; // Only server can write
     }
 
     match /syncHistory/{logId} {
       allow read: if true;
-      allow write: if false;
+      allow write: if false; // Only server can write
     }
 
-    // Logged-in users can create orders (via secure server action).
-    // Users can only read their own orders.
+    // Rules for the new 'orders' collection
     match /orders/{orderId} {
-      // Allow create only from authenticated requests. The server action will be authenticated.
-      allow create: if request.auth != null;
+      // Allow authenticated users to create new orders.
+      // They cannot set the status, printfulOrderId, or createdAt fields.
+      // The server will handle these fields securely.
+      allow create: if request.auth != null
+                    && request.resource.data.userId == request.auth.uid
+                    && !("status" in request.resource.data)
+                    && !("printfulOrderId" in request.resource.data)
+                    && !("createdAt" in request.resource.data);
       
-      // Users can only read orders where their UID matches the document's userId.
+      // Allow authenticated user who created the order to read it.
       allow read: if request.auth != null && resource.data.userId == request.auth.uid;
 
       // Do not allow clients to update or delete orders.
-      allow update, delete: if false; 
+      // This must be handled by the server (Admin SDK).
+      allow update, delete: if false;
     }
   }
 }

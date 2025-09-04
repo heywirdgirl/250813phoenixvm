@@ -45,13 +45,14 @@ export default function ProfilePage() {
               
               let createdAtString = 'Date not available';
               let createdAtTimestamp = 0;
-              if (data.createdAt && typeof (data.createdAt as any)?.toDate === 'function') {
+              // Check if createdAt is a valid Firestore Timestamp
+              if (data.createdAt && typeof (data.createdAt as Timestamp)?.toDate === 'function') {
                   const timestamp = data.createdAt as Timestamp;
                   createdAtString = timestamp.toDate().toLocaleDateString();
                   createdAtTimestamp = timestamp.toMillis();
-              } else if (data.createdAt) {
-                  console.warn("Order has a 'createdAt' field that is not a Timestamp:", data);
-                  createdAtString = 'Pending date...';
+              } else {
+                  // Handle cases where createdAt might not be set yet (as per new rules)
+                  createdAtString = 'Processing...';
               }
               
               return {
@@ -59,6 +60,7 @@ export default function ProfilePage() {
                 id: doc.id,
                 createdAt: createdAtString,
                 createdAtTimestamp: createdAtTimestamp,
+                status: data.status ?? 'Pending', // Provide default status
               } as EnrichedOrder;
           });
           
