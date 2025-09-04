@@ -226,7 +226,6 @@ export default function CheckoutPage() {
                     createOrder={createOrder}
                     onApprove={onApprove}
                     onError={onError}
-                    disabled={isPending}
                 />
             </CardFooter>
             </Card>
