@@ -10,12 +10,10 @@ import Image from "next/image";
 import { useAuth } from "@/context/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PayPalScriptProvider, PayPalButtons, type CreateOrderData, type OnApproveData } from "@paypal/react-paypal-js";
-import { createOrderAction, captureOrderAction } from "@/app/actions";
+import { createOrderAction, captureOrderAndSaveAction } from "@/app/actions";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Terminal } from "lucide-react";
-import { db } from "@/firebase/clientApp";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
-import type { Order } from "@/lib/types";
+import type { Recipient } from "@/lib/types";
 
 
 export default function CheckoutPage() {
@@ -47,6 +45,16 @@ export default function CheckoutPage() {
   
   const paypalClientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID;
 
+  // This is a placeholder for shipping details. In a real app, you'd collect this from the user.
+  const shippingDetails: Recipient = {
+    name: user?.displayName || "Test User",
+    address1: "123 Main St",
+    city: "San Jose",
+    state_code: "CA",
+    country_code: "US",
+    zip: "95131"
+  };
+
   const createOrder = async (data: CreateOrderData) => {
     setError(null);
     try {
@@ -72,53 +80,14 @@ export default function CheckoutPage() {
     }
 
     startTransition(async () => {
-        // Step 1: Capture the payment via Server Action
-        const captureResponse = await captureOrderAction(data.orderID);
+        const response = await captureOrderAndSaveAction(data.orderID, cartItems, grandTotal, user, shippingDetails);
 
-        if (!captureResponse.success) {
-            setError(captureResponse.error || "An unknown error occurred while capturing your payment.");
-            return;
-        }
-
-        // Step 2: If capture is successful, save the order to Firestore from the client
-        try {
-            // Create a new order object that complies with the new Firestore rules
-            const newOrder: Omit<Order, 'id'> = {
-                userId: user.uid,
-                userEmail: user.email,
-                userName: user.displayName,
-                items: cartItems.map(item => ({
-                    id: item.id,
-                    quantity: item.quantity,
-                    variant: item.variant,
-                    product: {
-                        id: item.product.id,
-                        name: item.product.name,
-                        price: item.product.price,
-                        images: [item.product.images[0]],
-                        description: '', // Don't need full description
-                        variants: [] // Don't need all variants
-                    }
-                })),
-                totalAmount: grandTotal,
-                paypalOrderId: data.orderID,
-                paypalTransactionId: captureResponse.transactionId,
-                createdAt: serverTimestamp(), // Let Firestore set the timestamp on the server
-            };
-
-            const ordersCollectionRef = collection(db, 'orders');
-            const docRef = await addDoc(ordersCollectionRef, newOrder);
-
-            // Step 3: Redirect on successful save
+        if (response.success && response.firestoreOrderId) {
             sessionStorage.setItem('order_complete', 'true');
             clearCart();
-            router.push(`/order/${docRef.id}`);
-
-        } catch (firestoreError: any) {
-             console.error("Firestore save error:", firestoreError);
-             const userMessage = `We failed to save your order details. Please contact support with transaction ID ${captureResponse.transactionId}. Error: ${firestoreError.message}`;
-
-             setError(`Payment was successful, but ${userMessage}`);
+            router.push(`/order/${response.firestoreOrderId}`);
+        } else {
+            setError(response.error || "An unknown error occurred while capturing your payment.");
         }
     });
   };
