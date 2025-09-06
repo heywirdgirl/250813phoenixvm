@@ -26,6 +26,15 @@ export interface CartItem {
   quantity: number;
 }
 
+// Interface for Printful cost details
+export interface PrintfulCosts {
+  subtotal: string;
+  shipping: string;
+  tax: string;
+  total: string;
+  currency: string;
+}
+
 export interface Order {
   id: string; // Firestore document ID
   userId: string;
@@ -35,12 +44,16 @@ export interface Order {
   totalAmount: number;
   paypalOrderId: string;
   paypalTransactionId: string;
-  createdAt?: FieldValue | Timestamp; // Optional on create, present on read
-  status?: 'Pending' | 'Processing' | 'Shipped' | 'Delivered' | 'Cancelled'; // Optional on create
+  createdAt: FieldValue;
+  status: 'Pending' | 'Processing' | 'Shipped' | 'Delivered' | 'Cancelled'; // User-facing status
+  recipient: Recipient;
+  // Printful-specific fields
   printfulOrderId?: number;
-  printfulOrderStatus?: string;
-  recipient?: Recipient;
+  printfulOrderStatus?: string; // e.g., 'draft', 'pending'
+  printfulCosts?: PrintfulCosts;
+  printfulShippingMethod?: string;
 }
+
 
 export interface User {
   uid: string;

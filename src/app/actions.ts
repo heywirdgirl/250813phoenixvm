@@ -4,7 +4,7 @@
 import { suggestProductTags, type SuggestProductTagsOutput } from '@/ai/flows/suggest-product-tags';
 import { createPayPalOrder, capturePayPalOrder } from '@/lib/paypal';
 import { createDraftOrder } from '@/lib/printful';
-import type { CartItem, Recipient, OrderItem, Order } from '@/lib/types';
+import type { CartItem, Recipient, OrderItem, Order, User } from '@/lib/types';
 import { db } from "@/firebase/clientApp"; 
 import { collection, addDoc, doc, updateDoc, serverTimestamp } from "firebase/firestore";
 
@@ -50,22 +50,66 @@ export async function createOrderAction(cartItems: CartItem[]) {
     }
 }
 
-// This action ONLY captures the PayPal order. It does not touch Firestore.
-export async function captureOrderAction(orderID: string) {
+
+// This action captures the PayPal order and saves the order to Firestore.
+export async function captureOrderAndSaveAction(
+    orderID: string, 
+    cartItems: CartItem[],
+    grandTotal: number,
+    user: User,
+    shippingDetails: Recipient
+) {
     try {
         const captureData = await capturePayPalOrder(orderID);
          if (!captureData || captureData.status !== 'COMPLETED') {
             const message = (captureData as any)?.details?.[0]?.description || 'PayPal payment not completed.';
             throw new Error(message);
         }
-        // Return only the necessary data to the client
+
+        const transactionId = captureData.purchase_units[0]?.payments?.captures[0]?.id || 'N/A';
+        
+        // Payment is successful, now save the order to Firestore.
+        const newOrder: Omit<Order, 'id'> = {
+            userId: user.uid,
+            userEmail: user.email,
+            userName: user.displayName,
+            items: cartItems.map(item => ({
+                id: item.id,
+                quantity: item.quantity,
+                variant: item.variant,
+                product: {
+                    id: item.product.id,
+                    name: item.product.name,
+                    price: item.product.price,
+                    images: [item.product.images[0]],
+                    description: '', 
+                    variants: [] 
+                }
+            })),
+            totalAmount: grandTotal,
+            paypalOrderId: orderID,
+            paypalTransactionId: transactionId,
+            createdAt: serverTimestamp(),
+            status: 'Pending', // Initial status
+            recipient: shippingDetails
+        };
+
+        const ordersCollectionRef = collection(db, 'orders');
+        const docRef = await addDoc(ordersCollectionRef, newOrder);
+
         return { 
             success: true, 
-            transactionId: captureData.purchase_units[0]?.payments?.captures[0]?.id || 'N/A',
+            firestoreOrderId: docRef.id,
         };
+
     } catch (error: any) {
-        console.error("Server Action Exception (captureOrderAction):", error);
-        return { success: false, error: `Payment capture failed: ${error.message}` };
+        console.error("Server Action Exception (captureOrderAndSaveAction):", error);
+        // Distinguish between payment and saving error
+        if (error.message.includes("PayPal")) {
+            return { success: false, error: `Payment capture failed: ${error.message}` };
+        } else {
+            return { success: false, error: `We failed to save your order. Please contact support. Error: ${error.message}` };
+        }
     }
 }
 
@@ -95,13 +139,16 @@ export async function createPrintfulDraftOrder(
       await updateDoc(orderDocRef, {
         printfulOrderId: printfulOrder.id,
         printfulOrderStatus: printfulOrder.status,
+        printfulCosts: printfulOrder.costs,
+        printfulShippingMethod: `${printfulOrder.shipping} (${printfulOrder.shipping_service_name})`,
         status: 'draft', // Update status to reflect Printful's state
       });
 
       return { success: true, orderId: newOrderRef.id };
     } else {
       // If Printful API returns an error
-      throw new Error(printfulResult.result || 'Failed to create Printful order');
+      const errorMessage = typeof printfulResult.result === 'string' ? printfulResult.result : JSON.stringify(printfulResult.result);
+      throw new Error(errorMessage || 'Failed to create Printful order');
     }
 
   } catch (e: any) {
